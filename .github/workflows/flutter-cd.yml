@@ -1,0 +1,51 @@
+name: Flutter CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: 'Build Flavor'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      env_contents:
+        description: 'Paste entire .env file contents here'
+        required: false
+        type: string
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Create Environment File
+        run: |
+          if [ -n "${{ inputs.env_contents }}" ]; then
+            echo "${{ inputs.env_contents }}" > .env.${{ inputs.flavor }}
+          else
+            echo "# Default environment configuration" > .env.${{ inputs.flavor }}
+          fi
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      
+      - name: Prepare Environment
+        run: |
+          chmod +x ./scripts/setup-env.sh
+          ./scripts/setup-env.sh -f ${{ inputs.flavor }} -e .env.${{ inputs.flavor }}
+      
+      - name: Install dependencies
+        run: flutter pub get
+        
+      - name: Build APK
+        run: flutter build apk --flavor ${{ inputs.flavor }} --target lib/main_${{ inputs.flavor }}.dart
+        
+      - name: Build App Bundle
+        run: flutter build appbundle --flavor ${{ inputs.flavor }} --target lib/main_${{ inputs.flavor }}.dart
