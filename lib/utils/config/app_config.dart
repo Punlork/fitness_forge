@@ -64,7 +64,10 @@ class AppConfig {
   static const int cacheMaxSize = 10 * 1024 * 1024; // 10 MB in bytes
 
   // Feature Flags
-  static bool get enablePushNotifications => !isDevelopment;
-  static bool get enableAnalytics => !isDevelopment;
-  static bool get enableCrashReporting => !isDevelopment;
+  static bool get enablePushNotifications =>
+      FlavorConfig.instance.values.enablePushNotifications;
+  static bool get enableAnalytics =>
+      FlavorConfig.instance.values.enableAnalytics;
+  static bool get enableCrashReporting =>
+      FlavorConfig.instance.values.enableCrashReporting;
 }

@@ -5,46 +5,96 @@ abstract class HomeState extends BaseState {
 }
 
 class HomeInitial extends HomeState {
+  final String message;
+
+  const HomeInitial({this.message = 'Start your workout session'});
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class HomeLoading extends HomeState {
+  const HomeLoading();
+
   @override
   List<Object?> get props => [];
 }
 
-class HomeLoading extends HomeState {
-  final bool isRefreshing;
+class HomeReady extends HomeState {
+  final WorkoutSessionModel session;
+  final WorkoutDayPlanModel todayPlan;
+  final List<JumpRopeIntervalModel> intervals;
+  final List<StrengthSetModel> strengthSets;
+  final List<ProgressPointModel> progressPoints;
+  final BodyMetricModel? latestBodyMetrics;
+  final List<BodyMetricModel> bodyMetricsHistory;
+  final String? sessionSummaryMessage;
+  final int restSecondsRemaining;
 
-  const HomeLoading({this.isRefreshing = false});
-
-  @override
-  List<Object?> get props => [isRefreshing];
-}
-
-class HomeLoaded extends HomeState {
-  final String title;
-  final String message;
-  final DateTime? lastRefreshed;
-  final Map<String, dynamic>? data;
-
-  const HomeLoaded({
-    required this.title,
-    required this.message,
-    this.lastRefreshed,
-    this.data,
+  const HomeReady({
+    required this.session,
+    required this.todayPlan,
+    required this.intervals,
+    required this.strengthSets,
+    required this.progressPoints,
+    required this.latestBodyMetrics,
+    required this.bodyMetricsHistory,
+    this.sessionSummaryMessage,
+    this.restSecondsRemaining = 0,
   });
 
-  @override
-  List<Object?> get props => [title, message, lastRefreshed, data];
+  double get totalStrengthVolume =>
+      strengthSets.fold<double>(0, (sum, set) => sum + set.volume);
+  int get cardioSeconds =>
+      intervals.fold<int>(0, (sum, interval) => sum + interval.durationSeconds);
+  bool get hasCardioLogged => cardioSeconds > 0;
+  bool get hasStrengthLogged => strengthSets.isNotEmpty;
 
-  HomeLoaded copyWith({
-    String? title,
-    String? message,
-    DateTime? lastRefreshed,
-    Map<String, dynamic>? data,
+  int get completionScore {
+    int score = 0;
+    if (hasCardioLogged) score += 40;
+    if (hasStrengthLogged) score += 40;
+    if (session.proteinCompleted) score += 20;
+    return score;
+  }
+
+  @override
+  List<Object?> get props => [
+        session,
+        todayPlan,
+        intervals,
+        strengthSets,
+        progressPoints,
+        latestBodyMetrics,
+        bodyMetricsHistory,
+        sessionSummaryMessage,
+        restSecondsRemaining,
+      ];
+
+  HomeReady copyWith({
+    WorkoutSessionModel? session,
+    WorkoutDayPlanModel? todayPlan,
+    List<JumpRopeIntervalModel>? intervals,
+    List<StrengthSetModel>? strengthSets,
+    List<ProgressPointModel>? progressPoints,
+    BodyMetricModel? latestBodyMetrics,
+    List<BodyMetricModel>? bodyMetricsHistory,
+    String? sessionSummaryMessage,
+    bool clearSessionSummaryMessage = false,
+    int? restSecondsRemaining,
   }) {
-    return HomeLoaded(
-      title: title ?? this.title,
-      message: message ?? this.message,
-      lastRefreshed: lastRefreshed ?? this.lastRefreshed,
-      data: data ?? this.data,
+    return HomeReady(
+      session: session ?? this.session,
+      todayPlan: todayPlan ?? this.todayPlan,
+      intervals: intervals ?? this.intervals,
+      strengthSets: strengthSets ?? this.strengthSets,
+      progressPoints: progressPoints ?? this.progressPoints,
+      latestBodyMetrics: latestBodyMetrics ?? this.latestBodyMetrics,
+      bodyMetricsHistory: bodyMetricsHistory ?? this.bodyMetricsHistory,
+      sessionSummaryMessage: clearSessionSummaryMessage
+          ? null
+          : (sessionSummaryMessage ?? this.sessionSummaryMessage),
+      restSecondsRemaining: restSecondsRemaining ?? this.restSecondsRemaining,
     );
   }
 }

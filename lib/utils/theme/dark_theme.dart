@@ -111,7 +111,7 @@ ThemeData darkTheme(BaseColorStyles color) {
       selectedLabelStyle: TextStyle(color: color.bottomTabBarLabelSelected),
       unselectedLabelStyle: TextStyle(color: color.bottomTabBarLabelUnselected),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: color.surfaceBackground,
       elevation: 4,
     ),

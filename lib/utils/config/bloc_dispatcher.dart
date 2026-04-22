@@ -6,44 +6,54 @@ import 'package:flutter_base_template/core/error/app_error.dart';
 //Dispatcher to Dispatch Blocs Based on Status and Screen from a Notification
 
 class BlocDispatcher extends BlocObserver {
-  final Logger _logger = Logger();
+  final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      lineLength: 200,
+    ),
+  );
   final bool _enableLogging;
 
   BlocDispatcher({bool? enableLogging})
       : _enableLogging =
             enableLogging ?? FlavorConfig.instance.values.enableLogging;
 
-  @override
-  void onCreate(BlocBase bloc) {
-    super.onCreate(bloc);
-    if (_enableLogging) {
-      _logger.d('onCreate -- ${bloc.runtimeType}');
-    }
-  }
+  // @override
+  // void onCreate(BlocBase bloc) {
+  //   super.onCreate(bloc);
+  //   if (_enableLogging) {
+  //     _logger.d('onCreate -- ${bloc.runtimeType}');
+  //   }
+  // }
 
-  @override
-  void onEvent(Bloc bloc, Object? event) {
-    super.onEvent(bloc, event);
-    if (_enableLogging) {
-      _logger.d('onEvent -- ${bloc.runtimeType}, $event');
-    }
-  }
+  // @override
+  // void onEvent(Bloc bloc, Object? event) {
+  //   super.onEvent(bloc, event);
+  //   if (_enableLogging) {
+  //     _logger.d('onEvent -- ${bloc.runtimeType}, $event');
+  //   }
+  // }
 
   @override
   void onChange(BlocBase bloc, Change change) {
     super.onChange(bloc, change);
     if (_enableLogging) {
-      _logger.d('onChange -- ${bloc.runtimeType}, $change');
+      _logger.d(
+        'onChange -- \n'
+        'Bloc: ${bloc.runtimeType}\n'
+        'Current State: ${change.currentState.runtimeType}\n'
+        'Next State: ${change.nextState.runtimeType}',
+      );
     }
   }
 
-  @override
-  void onTransition(Bloc bloc, Transition transition) {
-    super.onTransition(bloc, transition);
-    if (_enableLogging) {
-      _logger.d('onTransition -- ${bloc.runtimeType}, $transition');
-    }
-  }
+  // @override
+  // void onTransition(Bloc bloc, Transition transition) {
+  //   super.onTransition(bloc, transition);
+  //   if (_enableLogging) {
+  //     _logger.d('onTransition -- ${bloc.runtimeType}, $transition');
+  //   }
+  // }
 
   @override
   void onError(BlocBase bloc, Object error, StackTrace stackTrace) {

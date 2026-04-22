@@ -11,7 +11,7 @@ class DatabaseService {
 
   // Database version and name
   static const _databaseName = "app_database.db";
-  static const _databaseVersion = 1;
+  static const _databaseVersion = 3;
 
   // Private constructor
   DatabaseService._();
@@ -67,6 +67,8 @@ class DatabaseService {
         // Create indexes
         await txn.execute('CREATE INDEX idx_users_email ON users(email)');
 
+        await _createWorkoutTables(txn);
+
         _logger.i('Database tables created successfully');
       });
     } catch (e, stackTrace) {
@@ -84,7 +86,10 @@ class DatabaseService {
     try {
       await db.transaction((txn) async {
         if (oldVersion < 2) {
-          // Add new tables or columns for version 2
+          await _createWorkoutTables(txn);
+        }
+        if (oldVersion < 3) {
+          await _upgradeToV3(txn);
         }
       });
       _logger.i('Database upgraded from $oldVersion to $newVersion');
@@ -96,6 +101,89 @@ class DatabaseService {
         stackTrace: stackTrace,
       );
     }
+  }
+
+  Future<void> _createWorkoutTables(Transaction txn) async {
+    await txn.execute('''
+      CREATE TABLE IF NOT EXISTS session_logs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_date TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        workout_completed INTEGER NOT NULL DEFAULT 0,
+        protein_completed INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+
+    await txn.execute('''
+      CREATE TABLE IF NOT EXISTS jump_rope_intervals(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER NOT NULL,
+        interval_type TEXT NOT NULL,
+        duration_seconds INTEGER NOT NULL,
+        interval_order INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (session_id) REFERENCES session_logs(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await txn.execute('''
+      CREATE TABLE IF NOT EXISTS strength_sets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER NOT NULL,
+        exercise_name TEXT NOT NULL,
+        weight REAL NOT NULL,
+        load_type TEXT NOT NULL DEFAULT 'external',
+        reps INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (session_id) REFERENCES session_logs(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await txn.execute('''
+      CREATE TABLE IF NOT EXISTS body_weight_logs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        log_date TEXT NOT NULL UNIQUE,
+        body_weight REAL NOT NULL
+      )
+    ''');
+
+    await txn.execute('''
+      CREATE TABLE IF NOT EXISTS body_metrics(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        log_date TEXT NOT NULL UNIQUE,
+        weight_kg REAL NOT NULL,
+        height_cm REAL NOT NULL,
+        body_fat_percent REAL NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
+
+    await txn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_sessions_date ON session_logs(session_date)');
+    await txn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_intervals_session ON jump_rope_intervals(session_id)');
+    await txn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_sets_session ON strength_sets(session_id)');
+    await txn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_body_metrics_date ON body_metrics(log_date)');
+  }
+
+  Future<void> _upgradeToV3(Transaction txn) async {
+    await txn.execute(
+      "ALTER TABLE strength_sets ADD COLUMN load_type TEXT NOT NULL DEFAULT 'external'",
+    );
+    await txn.execute('''
+      CREATE TABLE IF NOT EXISTS body_metrics(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        log_date TEXT NOT NULL UNIQUE,
+        weight_kg REAL NOT NULL,
+        height_cm REAL NOT NULL,
+        body_fat_percent REAL NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
+    await txn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_body_metrics_date ON body_metrics(log_date)');
   }
 
   // Generic query methods with automatic retry

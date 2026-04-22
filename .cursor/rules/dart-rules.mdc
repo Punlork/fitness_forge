@@ -1,0 +1,42 @@
+---
+description: Keep Dart widgets modular, enforce trailing commas, and allow full package imports or relative imports with longer paths
+globs: lib/**/*.dart
+alwaysApply: false
+---
+
+# Dart UI Structure, Formatting, And Imports
+
+- Extract heavy widgets into dedicated custom files instead of keeping large widget trees in one file.
+- Keep screen files focused on composition and state flow; move reusable UI sections into separate widgets.
+- Prefer one widget per file when a widget has substantial layout logic or exceeds simple helper size.
+- Always include trailing commas in Dart collections, constructors, and widget argument lists to improve formatting and diffs.
+- **Allow both full package imports (e.g., `import 'package:theme_provider/theme_provider.dart'`) and relative imports with longer paths (e.g., `import 'views/widgets/foo.dart'`).**
+- **Short/ambiguous relative imports (e.g., `import 'file.dart'`, `import '../bloc/home_bloc.dart'`) are BAD and should not be used.**
+
+## Examples
+
+```dart
+// BAD: Missing trailing commas
+return Column(
+  children: [Text('A'), Text('B')]
+);
+
+// GOOD: With trailing commas
+return Column(
+  children: [
+    Text('A'),
+    Text('B'),
+  ],
+);
+
+// GOOD: Full package import
+import 'package:theme_provider/theme_provider.dart';
+import 'package:flutter_base_template/modules/home/bloc/home_bloc.dart';
+
+// BAD: Short/ambiguous relative import
+import 'file.dart';
+import '../bloc/home_bloc.dart';
+
+// GOOD: Relative import with longer path
+import 'views/widgets/home_today_tab.dart';
+```

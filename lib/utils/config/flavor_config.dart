@@ -10,38 +10,65 @@ class FlavorValues {
   final String baseUrl;
   final String appTitle;
   final bool enableLogging;
+  final bool enablePushNotifications;
+  final bool enableAnalytics;
+  final bool enableCrashReporting;
   final Map<String, String> apiKeys;
 
   FlavorValues({
     String? baseUrl,
     String? appTitle,
     bool? enableLogging,
+    bool? enablePushNotifications,
+    bool? enableAnalytics,
+    bool? enableCrashReporting,
     Map<String, String>? apiKeys,
-  }) : baseUrl = baseUrl ?? Platform.environment['API_BASE_URL'] ?? 'https://api.example.com',
-       appTitle = appTitle ?? Platform.environment['APP_TITLE'] ?? 'App',
-       enableLogging = enableLogging ?? Platform.environment['ENABLE_LOGGING']?.toLowerCase() == 'true',
-       apiKeys = apiKeys ?? {
-          'analytics': Platform.environment['ANALYTICS_KEY'] ?? '',
-          'maps': Platform.environment['MAPS_KEY'] ?? '',
-          // Add other API keys as needed
-        };
+  })  : baseUrl = baseUrl ??
+            Platform.environment['API_BASE_URL'] ??
+            'https://api.example.com',
+        appTitle = appTitle ?? Platform.environment['APP_TITLE'] ?? 'App',
+        enableLogging = enableLogging ??
+            Platform.environment['ENABLE_LOGGING']?.toLowerCase() == 'true',
+        enablePushNotifications = enablePushNotifications ??
+            Platform.environment['ENABLE_PUSH_NOTIFICATIONS']?.toLowerCase() ==
+                'true',
+        enableAnalytics = enableAnalytics ??
+            Platform.environment['ENABLE_ANALYTICS']?.toLowerCase() == 'true',
+        enableCrashReporting = enableCrashReporting ??
+            Platform.environment['ENABLE_CRASH_REPORTING']?.toLowerCase() ==
+                'true',
+        apiKeys = apiKeys ??
+            {
+              'analytics': Platform.environment['ANALYTICS_KEY'] ?? '',
+              'maps': Platform.environment['MAPS_KEY'] ?? '',
+              // Add other API keys as needed
+            };
 
   factory FlavorValues.development() => FlavorValues(
         baseUrl: Platform.environment['DEV_API_BASE_URL'],
         appTitle: 'App Dev',
         enableLogging: true,
+        enablePushNotifications: false,
+        enableAnalytics: false,
+        enableCrashReporting: false,
       );
 
   factory FlavorValues.staging() => FlavorValues(
         baseUrl: Platform.environment['STAGING_API_BASE_URL'],
         appTitle: 'App Staging',
         enableLogging: true,
+        enablePushNotifications: false,
+        enableAnalytics: false,
+        enableCrashReporting: false,
       );
 
   factory FlavorValues.production() => FlavorValues(
         baseUrl: Platform.environment['PROD_API_BASE_URL'],
         appTitle: 'App',
         enableLogging: false,
+        enablePushNotifications: false,
+        enableAnalytics: false,
+        enableCrashReporting: false,
       );
 }
 

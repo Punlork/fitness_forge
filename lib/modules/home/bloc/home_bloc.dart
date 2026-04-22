@@ -1,6 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_base_template/core/base_bloc.dart';
 import 'package:flutter_base_template/core/error/app_error.dart';
+import 'package:flutter_base_template/models/body_metric_model.dart';
+import 'package:flutter_base_template/models/jump_rope_interval_model.dart';
+import 'package:flutter_base_template/models/progress_point_model.dart';
+import 'package:flutter_base_template/models/strength_set_model.dart';
+import 'package:flutter_base_template/models/workout_plan_model.dart';
+import 'package:flutter_base_template/models/workout_session_model.dart';
+import 'package:flutter_base_template/repository/workout/local/local_workout_repository.dart';
 import 'package:logger/logger.dart';
 
 part 'home_event.dart';
@@ -8,129 +17,194 @@ part 'home_state.dart';
 
 class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
   final Logger _logger = Logger();
+  final LocalWorkoutRepository _workoutRepository;
+  Timer? _restTimer;
+  static const int _defaultRestSeconds = 90;
 
-  HomeBloc() : super(HomeInitial()) {
-    on<InitializeHomeEvent>(_onInitialize);
-    on<LoadHomeDataEvent>(_onLoadData);
-    on<RefreshHomeDataEvent>(_onRefresh);
-  }
-
-  Future<void> _onInitialize(
-    InitializeHomeEvent event,
-    Emitter<HomeState> emit,
-  ) async {
-    try {
-      _logger.i('Initializing home screen');
-      emit(const HomeLoading());
-
-      // Simulated data initialization
-      await Future.delayed(const Duration(seconds: 1));
-
-      emit(HomeLoaded(
-        title: 'Welcome to Flutter Base Template',
-        message: 'Your app is ready to go!',
-        lastRefreshed: DateTime.now(),
-        data: {
-          'users': [
-            {'name': 'John Doe', 'email': 'john.doe@example.com'},
-            {'name': 'Jane Smith', 'email': 'jane.smith@example.com'},
-          ],
-          'projects': [
-            {'name': 'Flutter Base Template', 'status': 'Active'},
-            {'name': 'Mobile App', 'status': 'In Progress'},
-          ],
-        },
-      ));
-    } catch (e, stackTrace) {
-      await handleError(e, stackTrace, emit);
-    }
-  }
-
-  Future<void> _onLoadData(
-    LoadHomeDataEvent event,
-    Emitter<HomeState> emit,
-  ) async {
-    try {
-      _logger.i('Loading home data');
-      emit(HomeLoading(isRefreshing: event.forceRefresh));
-
-      // Simulated data loading with optional force refresh
-      await Future.delayed(const Duration(seconds: 1));
-
-      emit(HomeLoaded(
-        title: 'Data Loaded Successfully',
-        message: event.forceRefresh
-            ? 'Data has been forcefully refreshed'
-            : 'Home data loaded from cache',
-        lastRefreshed: DateTime.now(),
-        data: {
-          'users': [
-            {'name': 'John Doe', 'email': 'john.doe@example.com'},
-            {'name': 'Jane Smith', 'email': 'jane.smith@example.com'},
-            {'name': 'New User', 'email': 'new.user@example.com'},
-          ],
-          'projects': [
-            {'name': 'Flutter Base Template', 'status': 'Active'},
-            {'name': 'Mobile App', 'status': 'In Progress'},
-            {'name': 'Web Dashboard', 'status': 'Planning'},
-          ],
-        },
-      ));
-    } catch (e, stackTrace) {
-      await handleError(e, stackTrace, emit);
-    }
-  }
-
-  Future<void> _onRefresh(
-    RefreshHomeDataEvent event,
-    Emitter<HomeState> emit,
-  ) async {
-    try {
-      final currentState = state;
-      _logger.i('Refreshing home data');
-
-      if (currentState is HomeLoaded) {
-        emit(const HomeLoading(isRefreshing: true));
-
-        // Simulated data refresh
-        await Future.delayed(const Duration(seconds: 1));
-
-        emit(HomeLoaded(
-          title: 'Data Refreshed',
-          message: 'Latest data fetched successfully',
-          lastRefreshed: DateTime.now(),
-          data: {
-            'users': [
-              {'name': 'John Doe', 'email': 'john.doe@example.com'},
-              {'name': 'Jane Smith', 'email': 'jane.smith@example.com'},
-              {'name': 'New User', 'email': 'new.user@example.com'},
-              {'name': 'Admin User', 'email': 'admin@example.com'},
-            ],
-            'projects': [
-              {'name': 'Flutter Base Template', 'status': 'Active'},
-              {'name': 'Mobile App', 'status': 'Completed'},
-              {'name': 'Web Dashboard', 'status': 'In Progress'},
-            ],
-          },
-        ));
-      }
-    } catch (e, stackTrace) {
-      await handleError(e, stackTrace, emit);
-    }
-  }
+  HomeBloc({LocalWorkoutRepository? workoutRepository})
+      : _workoutRepository = workoutRepository ?? LocalWorkoutRepository(),
+        super(const HomeInitial());
 
   @override
   Future<void> handleEvent(HomeEvent event, Emitter<HomeState> emit) async {
-    // Default event handling (can be overridden if needed)
     if (event is InitializeHomeEvent) {
-      await _onInitialize(event, emit);
-    } else if (event is LoadHomeDataEvent) {
-      await _onLoadData(event, emit);
-    } else if (event is RefreshHomeDataEvent) {
-      await _onRefresh(event, emit);
+      await _initializeSession(emit);
+    } else if (event is StartNewSessionEvent) {
+      await _startNewSession(emit);
+    } else if (event is AddJumpRopeIntervalEvent) {
+      await _addJumpRopeInterval(event, emit);
+    } else if (event is AddStrengthSetEvent) {
+      await _addStrengthSet(event, emit);
+    } else if (event is CompleteSessionEvent) {
+      await _completeSession(emit);
+    } else if (event is SaveBodyMetricsEvent) {
+      await _saveBodyMetrics(event, emit);
+    } else if (event is DismissSessionSummaryEvent) {
+      _dismissSessionSummary(emit);
+    } else if (event is _RestTimerTickEvent) {
+      _handleRestTimerTick(event, emit);
     } else {
       emit(const HomeError(message: 'Unknown event type'));
     }
+  }
+
+  Future<void> _initializeSession(Emitter<HomeState> emit) async {
+    emit(const HomeLoading());
+    final existingSession = await _workoutRepository.getLatestSessionForToday();
+    if (existingSession == null) {
+      await _startNewSession(emit);
+      return;
+    }
+    await _reloadSession(existingSession, emit);
+  }
+
+  Future<void> _startNewSession(Emitter<HomeState> emit) async {
+    _logger.i('Starting a new workout session');
+    _stopRestTimer();
+    final id = await _workoutRepository.startSession();
+    final session = await _workoutRepository.getLatestSessionForToday();
+    if (session == null || session.id != id) {
+      emit(const HomeError(message: 'Unable to start session'));
+      return;
+    }
+    await _reloadSession(session, emit);
+  }
+
+  Future<void> _addJumpRopeInterval(
+    AddJumpRopeIntervalEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+
+    await _workoutRepository.addJumpRopeInterval(
+      sessionId: currentState.session.id,
+      intervalType: event.intervalType,
+      durationSeconds: event.durationSeconds,
+    );
+
+    await _reloadSession(currentState.session, emit);
+  }
+
+  Future<void> _addStrengthSet(
+    AddStrengthSetEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+
+    await _workoutRepository.addStrengthSet(
+      sessionId: currentState.session.id,
+      exerciseName: event.exerciseName,
+      weight: event.weight,
+      loadType: event.loadType,
+      reps: event.reps,
+    );
+
+    _startRestTimer(_defaultRestSeconds);
+    await _reloadSession(currentState.session, emit,
+        restSecondsRemaining: _defaultRestSeconds);
+  }
+
+  void _handleRestTimerTick(
+      _RestTimerTickEvent event, Emitter<HomeState> emit) {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+    emit(currentState.copyWith(restSecondsRemaining: event.secondsRemaining));
+  }
+
+  Future<void> _completeSession(Emitter<HomeState> emit) async {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+
+    await _workoutRepository.completeSession(currentState.session.id);
+    final updatedSession =
+        await _workoutRepository.getSessionById(currentState.session.id);
+    if (updatedSession == null) {
+      return;
+    }
+
+    await _reloadSession(updatedSession, emit);
+    final refreshed = state;
+    if (refreshed is HomeReady) {
+      emit(
+        refreshed.copyWith(
+          sessionSummaryMessage:
+              'Session complete: ${refreshed.intervals.length} cardio intervals, ${refreshed.strengthSets.length} strength sets, total volume ${refreshed.totalStrengthVolume.toStringAsFixed(1)}.',
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveBodyMetrics(
+    SaveBodyMetricsEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+
+    await _workoutRepository.upsertBodyMetrics(
+      date: DateTime.now(),
+      weightKg: event.weightKg,
+      heightCm: event.heightCm,
+      bodyFatPercent: event.bodyFatPercent,
+    );
+
+    await _reloadSession(currentState.session, emit);
+  }
+
+  void _dismissSessionSummary(Emitter<HomeState> emit) {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+    emit(currentState.copyWith(clearSessionSummaryMessage: true));
+  }
+
+  Future<void> _reloadSession(
+    WorkoutSessionModel session,
+    Emitter<HomeState> emit, {
+    int restSecondsRemaining = 0,
+  }) async {
+    final WorkoutDayPlanModel todayPlan =
+        WorkoutWeekPlan.forDate(DateTime.now());
+    final List<JumpRopeIntervalModel> intervals =
+        await _workoutRepository.getJumpRopeIntervals(session.id);
+    final List<StrengthSetModel> strengthSets =
+        await _workoutRepository.getStrengthSets(session.id);
+    final List<ProgressPointModel> progressPoints =
+        await _workoutRepository.getRecentProgress();
+    final BodyMetricModel? latestBodyMetrics =
+        await _workoutRepository.getLatestBodyMetrics();
+    final List<BodyMetricModel> bodyMetricsHistory =
+        await _workoutRepository.getRecentBodyMetrics();
+    emit(HomeReady(
+      session: session,
+      todayPlan: todayPlan,
+      intervals: intervals,
+      strengthSets: strengthSets,
+      progressPoints: progressPoints,
+      latestBodyMetrics: latestBodyMetrics,
+      bodyMetricsHistory: bodyMetricsHistory,
+      restSecondsRemaining: restSecondsRemaining,
+    ));
+  }
+
+  void _startRestTimer(int seconds) {
+    _stopRestTimer();
+    int remaining = seconds;
+    _restTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      remaining -= 1;
+      if (remaining <= 0) {
+        add(const _RestTimerTickEvent(0));
+        timer.cancel();
+        return;
+      }
+      add(_RestTimerTickEvent(remaining));
+    });
+  }
+
+  void _stopRestTimer() {
+    _restTimer?.cancel();
+    _restTimer = null;
   }
 
   @override
@@ -147,5 +221,11 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
       stackTrace: stackTrace,
     );
     emit(HomeError(message: error.toString()));
+  }
+
+  @override
+  Future<void> close() async {
+    _stopRestTimer();
+    await super.close();
   }
 }

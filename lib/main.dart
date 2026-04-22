@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_base_template/modules/home/bloc/home_bloc.dart';
 import 'package:flutter_base_template/services/push_notification_service.dart';
 import 'package:flutter_base_template/utils/config/bloc_dispatcher.dart';
 import 'package:flutter_base_template/utils/config/app_config.dart';
@@ -58,17 +57,12 @@ class MyApp extends StatelessWidget {
         themes: appTheme,
         child: ThemeConsumer(
           child: Builder(
-            builder: (themeContext) => MultiBlocProvider(
-              providers: [
-                BlocProvider(create: (context) => HomeBloc()),
-              ],
-              child: FlavorBanner(
-                child: MaterialApp.router(
-                  title: AppConfig.appTitle,
-                  theme: ThemeProvider.themeOf(themeContext).data,
-                  routerConfig: AppRouter.router,
-                  debugShowCheckedModeBanner: !AppConfig.isProduction,
-                ),
+            builder: (themeContext) => FlavorBanner(
+              child: MaterialApp.router(
+                title: AppConfig.appTitle,
+                theme: ThemeProvider.themeOf(themeContext).data,
+                routerConfig: AppRouter.router,
+                debugShowCheckedModeBanner: !AppConfig.isProduction,
               ),
             ),
           ),

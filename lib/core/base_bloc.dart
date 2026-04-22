@@ -7,7 +7,12 @@ part 'base_bloc_state.dart';
 
 abstract class BaseBloc<Event extends BaseEvent, State extends BaseState>
     extends Bloc<Event, State> {
-  final Logger logger = Logger();
+  final Logger logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      lineLength: 200,
+    ),
+  );
   bool _isDisposed = false;
 
   BaseBloc(super.initialState) {

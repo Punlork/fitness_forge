@@ -32,6 +32,7 @@ fi
 
 NEW_PROJECT_NAME=$1
 OLD_PROJECT_NAME="flutter_base_template"
+OLD_PACKAGE_NAME="com.example"
 NEW_PACKAGE_NAME=$(echo $NEW_PROJECT_NAME | sed 's/_//')
 
 print_status "Starting project generation for: $NEW_PROJECT_NAME"
