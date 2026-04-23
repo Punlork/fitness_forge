@@ -13,7 +13,8 @@ class AppConfig {
   AppConfig._internal();
 
   static String get baseUrl => FlavorConfig.instance.values.baseUrl;
-  static bool get shouldShowLogs => FlavorConfig.instance.values.enableLogging;
+  static bool get shouldShowLogs =>
+      FlavorConfig.maybeValues?.enableLogging ?? false;
   static String get appTitle => FlavorConfig.instance.values.appTitle;
 
   static Map<String, dynamic> get headers => {

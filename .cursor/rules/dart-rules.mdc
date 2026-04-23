@@ -1,7 +1,7 @@
 ---
-description: Keep Dart widgets modular, enforce trailing commas, and allow full package imports or relative imports with longer paths
+description: Keep Dart widgets modular, enforce trailing commas, allow full package imports or relative imports with longer paths, and minimize token waste
 globs: lib/**/*.dart
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Dart UI Structure, Formatting, And Imports
@@ -40,3 +40,13 @@ import '../bloc/home_bloc.dart';
 // GOOD: Relative import with longer path
 import 'views/widgets/home_today_tab.dart';
 ```
+
+# Token Efficiency & Context Discipline
+
+- **When asked to fix or refactor code, return ONLY the changed sections or a concise diff.** Do NOT return the entire file unless explicitly requested.
+- **Do NOT re-explain obvious code.** Skip comments for self-explanatory logic. Only comment on non-obvious business rules or complex algorithms.
+- **Prefer precise file-path references** (e.g., `lib/modules/home/bloc/home_bloc.dart:45`) over quoting large blocks of code.
+- **Batch small, related fixes** into a single response instead of asking the user to prompt repeatedly.
+- **Avoid repeating project conventions** that are already documented in `.cursorrules` or `AGENTS.md`. Assume the user has read them.
+- **When exploring code, stop at the relevant depth.** Do NOT recursively read every imported file unless the user explicitly asks for a full audit.
+- **Use `edit` / `write` tools directly** rather than describing changes in prose when the intent is clear.

@@ -7,7 +7,8 @@
       "type": "dart",
       "flutterMode": "debug",
       "program": "lib/main_development.dart",
-      "args": ["--flavor", "development", "-v"]
+      "args": ["--flavor", "development", "-v"],
+      "toolArgs": ["fvm"]
     },
     {
       "name": "Staging",
@@ -15,7 +16,8 @@
       "type": "dart",
       "flutterMode": "debug",
       "program": "lib/main_staging.dart",
-      "args": ["--flavor", "staging"]
+      "args": ["--flavor", "staging"],
+      "toolArgs": ["fvm"]
     },
     {
       "name": "Production",
@@ -23,7 +25,8 @@
       "type": "dart",
       "flutterMode": "release",
       "program": "lib/main_production.dart",
-      "args": ["--flavor", "production"]
+      "args": ["--flavor", "production"],
+      "toolArgs": ["fvm"]
     }
   ]
 }

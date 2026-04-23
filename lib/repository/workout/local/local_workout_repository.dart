@@ -3,6 +3,7 @@ import 'package:flutter_base_template/models/body_metric_model.dart';
 import 'package:flutter_base_template/models/jump_rope_interval_model.dart';
 import 'package:flutter_base_template/models/progress_point_model.dart';
 import 'package:flutter_base_template/models/strength_set_model.dart';
+import 'package:flutter_base_template/models/workout_history_entry_model.dart';
 import 'package:flutter_base_template/models/workout_session_model.dart';
 
 class LocalWorkoutRepository extends BaseRepository {
@@ -15,6 +16,7 @@ class LocalWorkoutRepository extends BaseRepository {
         'started_at': timestamp.toIso8601String(),
         'workout_completed': 0,
         'protein_completed': 0,
+        'session_note': '',
       });
     });
   }
@@ -154,6 +156,21 @@ class LocalWorkoutRepository extends BaseRepository {
     });
   }
 
+  Future<void> saveSessionNote({
+    required int sessionId,
+    required String note,
+  }) async {
+    await handleDatabaseOperation(() async {
+      final db = await databaseService.database;
+      await db.update(
+        'session_logs',
+        {'session_note': note.trim()},
+        where: 'id = ?',
+        whereArgs: [sessionId],
+      );
+    });
+  }
+
   Future<WorkoutSessionModel?> getSessionById(int sessionId) async {
     return handleDatabaseOperation(() async {
       final db = await databaseService.database;
@@ -230,6 +247,38 @@ class LocalWorkoutRepository extends BaseRepository {
         orderBy: 'log_date ASC',
       );
       return rows.map(BodyMetricModel.fromDb).toList();
+    });
+  }
+
+  Future<List<WorkoutHistoryEntryModel>> getRecentSessionHistory(
+      {int days = 42}) async {
+    return handleDatabaseOperation(() async {
+      final db = await databaseService.database;
+      final rows = await db.rawQuery(
+        '''
+        SELECT
+          s.id,
+          s.session_date,
+          s.started_at,
+          s.workout_completed,
+          s.session_note,
+          COALESCE((
+            SELECT SUM(ss.weight * ss.reps)
+            FROM strength_sets ss
+            WHERE ss.session_id = s.id
+          ), 0) AS strength_volume,
+          COALESCE((
+            SELECT SUM(j.duration_seconds)
+            FROM jump_rope_intervals j
+            WHERE j.session_id = s.id
+          ), 0) AS cardio_seconds
+        FROM session_logs s
+        WHERE s.session_date >= date('now', ?)
+        ORDER BY s.session_date DESC, s.started_at DESC
+        ''',
+        ['-${days - 1} day'],
+      );
+      return rows.map(WorkoutHistoryEntryModel.fromDb).toList();
     });
   }
 

@@ -11,11 +11,12 @@ class HomeTodayTab extends StatelessWidget {
   final TextEditingController bodyWeightController;
   final TextEditingController heightController;
   final TextEditingController bodyFatController;
+  final TextEditingController sessionNoteController;
   final StrengthLoadType selectedLoadType;
   final VoidCallback onSubmitStrengthSet;
   final ValueChanged<String> onSelectStrengthMove;
-  final VoidCallback onOpenTimerTab;
   final VoidCallback onSaveBodyMetrics;
+  final VoidCallback onSaveSessionNote;
   final VoidCallback onCompleteSession;
   final ValueChanged<StrengthLoadType> onLoadTypeChanged;
 
@@ -27,11 +28,12 @@ class HomeTodayTab extends StatelessWidget {
     required this.bodyWeightController,
     required this.heightController,
     required this.bodyFatController,
+    required this.sessionNoteController,
     required this.selectedLoadType,
     required this.onSubmitStrengthSet,
     required this.onSelectStrengthMove,
-    required this.onOpenTimerTab,
     required this.onSaveBodyMetrics,
+    required this.onSaveSessionNote,
     required this.onCompleteSession,
     required this.onLoadTypeChanged,
     super.key,
@@ -39,9 +41,12 @@ class HomeTodayTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-      children: [
+    return CustomScrollView(
+      physics: const ClampingScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+          sliver: SliverList.list(children: [
         _SectionCard(
           title: 'Today\'s blueprint',
           subtitle: 'What to focus on and what to avoid during this session.',
@@ -54,15 +59,7 @@ class HomeTodayTab extends StatelessWidget {
           child: _WeeklyPlanPreview(state: state),
         ),
         const SizedBox(height: 16),
-        _SectionCard(
-          title: 'Cardio entry',
-          subtitle:
-              'Intervals are logged from the timer so entries stay accurate.',
-          child: _JumpRopePlanCard(
-            state: state,
-            onOpenTimerTab: onOpenTimerTab,
-          ),
-        ),
+        _WeeklyGoalsCard(state: state),
         const SizedBox(height: 16),
         _SectionCard(
           title: 'Quick strength log',
@@ -92,6 +89,15 @@ class HomeTodayTab extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _SectionCard(
+          title: 'Session notes',
+          subtitle: 'Capture context that numbers cannot explain.',
+          child: _SessionNotesCard(
+            sessionNoteController: sessionNoteController,
+            onSaveSessionNote: onSaveSessionNote,
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SectionCard(
           title: 'Finish session',
           subtitle: 'Wrap today only after all planned work is completed.',
           child: _SessionCompleteCard(
@@ -99,8 +105,9 @@ class HomeTodayTab extends StatelessWidget {
             onCompleteSession: onCompleteSession,
           ),
         ),
-      ],
-    );
+      ]),
+    ),
+  ]);
   }
 }
 
@@ -138,50 +145,6 @@ class _SectionCard extends StatelessWidget {
             child,
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _JumpRopePlanCard extends StatelessWidget {
-  final HomeReady state;
-  final VoidCallback onOpenTimerTab;
-
-  const _JumpRopePlanCard({
-    required this.state,
-    required this.onOpenTimerTab,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .primaryContainer
-            .withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            state.todayPlan.cardioInstruction,
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Use the timer tab to run intervals and auto-save work phases.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: onOpenTimerTab,
-            icon: const Icon(Icons.play_circle_outline),
-            label: const Text('Go to timer'),
-          ),
-        ],
       ),
     );
   }
@@ -546,6 +509,42 @@ class _SessionCompleteCard extends StatelessWidget {
   }
 }
 
+class _SessionNotesCard extends StatelessWidget {
+  final TextEditingController sessionNoteController;
+  final VoidCallback onSaveSessionNote;
+
+  const _SessionNotesCard({
+    required this.sessionNoteController,
+    required this.onSaveSessionNote,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TextField(
+          controller: sessionNoteController,
+          minLines: 3,
+          maxLines: 5,
+          decoration: const InputDecoration(
+            hintText: 'Felt tired, slept 5 hours, elbows felt better...',
+            // prefixIcon: Icon(Icons.sticky_note_2_outlined),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.tonalIcon(
+            onPressed: onSaveSessionNote,
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('Save session note'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _WeeklyPlanPreview extends StatelessWidget {
   final HomeReady state;
 
@@ -591,6 +590,110 @@ class _WeeklyPlanPreview extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemCount: WorkoutWeekPlan.days.length,
       ),
+    );
+  }
+}
+
+class _WeeklyGoalsCard extends StatelessWidget {
+  final HomeReady state;
+
+  const _WeeklyGoalsCard({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final volumeProgress = (state.weeklyVolumeGoal <= 0
+            ? 0
+            : state.currentWeekVolume / state.weeklyVolumeGoal)
+        .clamp(0, 1)
+        .toDouble();
+    final cardioProgress = (state.weeklyCardioSessionsGoal <= 0
+            ? 0
+            : state.currentWeekCardioSessions / state.weeklyCardioSessionsGoal)
+        .clamp(0, 1)
+        .toDouble();
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This week\'s goals',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Auto targets based on your recent performance.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.72),
+                  ),
+            ),
+            const SizedBox(height: 16),
+            _GoalProgressRow(
+              title: 'Strength volume',
+              progress: volumeProgress,
+              subtitle:
+                  '${state.currentWeekVolume.toStringAsFixed(0)} / ${state.weeklyVolumeGoal.toStringAsFixed(0)} kg',
+            ),
+            const SizedBox(height: 12),
+            _GoalProgressRow(
+              title: 'Cardio sessions',
+              progress: cardioProgress,
+              subtitle:
+                  '${state.currentWeekCardioSessions} / ${state.weeklyCardioSessionsGoal} sessions',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GoalProgressRow extends StatelessWidget {
+  final String title;
+  final double progress;
+  final String subtitle;
+
+  const _GoalProgressRow({
+    required this.title,
+    required this.progress,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(title, style: Theme.of(context).textTheme.labelLarge),
+            const Spacer(),
+            Text(
+              '${(progress * 100).toStringAsFixed(0)}%',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 8,
+            backgroundColor: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withValues(alpha: 0.6),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+      ],
     );
   }
 }

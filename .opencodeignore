@@ -1,0 +1,55 @@
+# OpenCode Context Exclusion — reduces token usage by preventing
+# large auto-generated or irrelevant files from being sent to the AI.
+
+# Build artifacts
+build/
+.dart_tool/
+.flutter-plugins*
+.packages
+pubspec.lock
+
+# Native build directories (very large, rarely need AI edits)
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+
+# Dependencies
+node_modules/
+
+# Generated code & coverage
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+coverage/
+*.lcov
+
+# Large asset files
+assets/images/
+assets/fonts/
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.ttf
+*.otf
+
+# IDE & local configs
+.vscode/
+.idea/
+*.iml
+.fvm/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs & temporary files
+*.log
+tmp/
+temp/
+
+# Test data fixtures (if very large)
+test/fixtures/large_*

@@ -42,168 +42,176 @@ class HomeTimerTab extends StatelessWidget {
         ? 1 - (remainingSeconds / workSeconds.clamp(1, 999))
         : 1 - (remainingSeconds / restSeconds.clamp(1, 999));
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-      children: [
-        Card(
-          elevation: 0,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primary.withValues(alpha: 0.22),
-                        colorScheme.surfaceContainerHighest,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
+    return CustomScrollView(
+      physics: const ClampingScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+          sliver: SliverList.list(
+            children: [
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28)),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
                     children: [
-                      SizedBox(
+                      Container(
                         width: 120,
                         height: 120,
-                        child: CircularProgressIndicator(
-                          value: progress.clamp(0, 1),
-                          strokeWidth: 8,
-                          backgroundColor:
-                              colorScheme.primary.withValues(alpha: 0.12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              colorScheme.primary.withValues(alpha: 0.22),
+                              colorScheme.surfaceContainerHighest,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 120,
+                              height: 120,
+                              child: CircularProgressIndicator(
+                                value: progress.clamp(0, 1),
+                                strokeWidth: 8,
+                                backgroundColor:
+                                    colorScheme.primary.withValues(alpha: 0.12),
+                              ),
+                            ),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '$remainingSeconds',
+                                  style:
+                                      Theme.of(context).textTheme.displaySmall,
+                                ),
+                                Text(
+                                  isWorkPhase ? 'WORK' : 'REST',
+                                  style: Theme.of(context).textTheme.labelLarge,
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
+                      const SizedBox(height: 18),
+                      Text(
+                        'Round $round of $targetRounds',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        isWorkPhase
+                            ? 'Push through this work phase.'
+                            : 'Recover, breathe, then go again.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
                         children: [
-                          Text(
-                            '$remainingSeconds',
-                            style: Theme.of(context).textTheme.displaySmall,
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: onToggleStartPause,
+                              icon: Icon(
+                                isRunning
+                                    ? Icons.pause_circle_outline
+                                    : Icons.play_arrow,
+                              ),
+                              label: Text(isRunning ? 'Pause' : 'Start'),
+                            ),
                           ),
-                          Text(
-                            isWorkPhase ? 'WORK' : 'REST',
-                            style: Theme.of(context).textTheme.labelLarge,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: onSkipPhase,
+                              icon: const Icon(Icons.skip_next),
+                              label: const Text('Next'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton.icon(
+                          onPressed: onReset,
+                          icon: const Icon(Icons.restart_alt),
+                          label: const Text('Reset timer'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Interval setup',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Tune the timer before you start. Work phases are auto-logged.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StepperTile(
+                              label: 'Work',
+                              suffix: 'sec',
+                              value: workSeconds,
+                              onChanged: onWorkSecondsChanged,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _StepperTile(
+                              label: 'Rest',
+                              suffix: 'sec',
+                              value: restSeconds,
+                              onChanged: onRestSecondsChanged,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _StepperTile(
+                              label: 'Rounds',
+                              suffix: 'x',
+                              value: targetRounds,
+                              min: 1,
+                              step: 1,
+                              onChanged: onTargetRoundsChanged,
+                            ),
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
-                Text(
-                  'Round $round of $targetRounds',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  isWorkPhase
-                      ? 'Push through this work phase.'
-                      : 'Recover, breathe, then go again.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: onToggleStartPause,
-                        icon: Icon(
-                          isRunning
-                              ? Icons.pause_circle_outline
-                              : Icons.play_arrow,
-                        ),
-                        label: Text(isRunning ? 'Pause' : 'Start'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: onSkipPhase,
-                        icon: const Icon(Icons.skip_next),
-                        label: const Text('Next'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    onPressed: onReset,
-                    icon: const Icon(Icons.restart_alt),
-                    label: const Text('Reset timer'),
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              _LatestIntervalsCard(state: state),
+            ],
           ),
         ),
-        const SizedBox(height: 16),
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Interval setup',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Tune the timer before you start. Work phases are auto-logged.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StepperTile(
-                        label: 'Work',
-                        suffix: 'sec',
-                        value: workSeconds,
-                        onChanged: onWorkSecondsChanged,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StepperTile(
-                        label: 'Rest',
-                        suffix: 'sec',
-                        value: restSeconds,
-                        onChanged: onRestSecondsChanged,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _StepperTile(
-                        label: 'Rounds',
-                        suffix: 'x',
-                        value: targetRounds,
-                        min: 1,
-                        step: 1,
-                        onChanged: onTargetRoundsChanged,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        _LatestIntervalsCard(state: state),
       ],
     );
   }

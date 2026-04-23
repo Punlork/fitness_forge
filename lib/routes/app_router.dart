@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:flutter_base_template/modules/history/views/history_page.dart';
 import 'package:flutter_base_template/modules/home/views/home_page.dart';
 // Example:
 // import 'package:flutter_base_template/modules/profile/views/profile_page.dart';
@@ -32,6 +33,11 @@ class AppRouter {
         name: Routes.home,
         path: Routes.homeRoute,
         builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        name: Routes.history,
+        path: Routes.historyRoute,
+        builder: (context, state) => const HistoryPage(),
       ),
       // Example:
       // GoRoute(

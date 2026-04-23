@@ -4,12 +4,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_base_template/services/push_notification_service.dart';
 import 'package:flutter_base_template/utils/config/bloc_dispatcher.dart';
 import 'package:flutter_base_template/utils/config/app_config.dart';
+import 'package:flutter_base_template/utils/config/flavor_config.dart';
 import 'package:flutter_base_template/utils/shared_prefs.dart';
 import 'package:flutter_base_template/utils/theme/theme.dart';
 import 'package:flutter_base_template/routes/app_router.dart';
 import 'package:flutter_base_template/utils/config/flavor_banner.dart';
 import 'package:logger/logger.dart';
 import 'package:theme_provider/theme_provider.dart';
+
+void main() {
+  FlavorConfig(flavor: Flavor.development);
+  mainCommon();
+}
 
 Future<void> mainCommon() async {
   WidgetsFlutterBinding.ensureInitialized();

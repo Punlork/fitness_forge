@@ -27,13 +27,14 @@ class StrengthSetModel {
 
   factory StrengthSetModel.fromDb(Map<String, dynamic> data) {
     return StrengthSetModel(
-      id: data['id'] as int,
-      sessionId: data['session_id'] as int,
-      exerciseName: data['exercise_name'] as String,
-      weight: (data['weight'] as num).toDouble(),
+      id: (data['id'] as num?)?.toInt() ?? 0,
+      sessionId: (data['session_id'] as num?)?.toInt() ?? 0,
+      exerciseName: data['exercise_name'] as String? ?? '',
+      weight: (data['weight'] as num?)?.toDouble() ?? 0.0,
       loadType: _loadTypeFromValue(data['load_type'] as String?),
-      reps: data['reps'] as int,
-      createdAt: DateTime.parse(data['created_at'] as String),
+      reps: (data['reps'] as num?)?.toInt() ?? 0,
+      createdAt: DateTime.tryParse(data['created_at'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 

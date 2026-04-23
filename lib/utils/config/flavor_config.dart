@@ -95,6 +95,8 @@ class FlavorConfig {
     return _instance!;
   }
 
+  static FlavorValues? get maybeValues => _instance?.values;
+
   static FlavorValues _getFlavorValues(Flavor flavor) {
     switch (flavor) {
       case Flavor.development:

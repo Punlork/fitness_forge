@@ -17,13 +17,13 @@ class UserModel extends Equatable {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      email: json['email'] as String,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      name: json['name'] as String? ?? '',
+      email: json['email'] as String? ?? '',
       avatar: json['avatar'] as String?,
-      lastSync: json['last_sync'] != null 
-        ? DateTime.parse(json['last_sync'] as String)
-        : null,
+      lastSync: json['last_sync'] != null
+          ? DateTime.tryParse(json['last_sync'].toString())
+          : null,
     );
   }
 
@@ -49,13 +49,13 @@ class UserModel extends Equatable {
 
   factory UserModel.fromDb(Map<String, dynamic> data) {
     return UserModel(
-      id: data['id'] as int,
-      name: data['name'] as String,
-      email: data['email'] as String,
+      id: (data['id'] as num?)?.toInt() ?? 0,
+      name: data['name'] as String? ?? '',
+      email: data['email'] as String? ?? '',
       avatar: data['avatar'] as String?,
-      lastSync: data['last_sync'] != null 
-        ? DateTime.parse(data['last_sync'] as String)
-        : null,
+      lastSync: data['last_sync'] != null
+          ? DateTime.tryParse(data['last_sync'].toString())
+          : null,
     );
   }
 

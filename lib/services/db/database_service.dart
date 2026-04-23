@@ -11,7 +11,7 @@ class DatabaseService {
 
   // Database version and name
   static const _databaseName = "app_database.db";
-  static const _databaseVersion = 3;
+  static const _databaseVersion = 4;
 
   // Private constructor
   DatabaseService._();
@@ -91,6 +91,9 @@ class DatabaseService {
         if (oldVersion < 3) {
           await _upgradeToV3(txn);
         }
+        if (oldVersion < 4) {
+          await _upgradeToV4(txn);
+        }
       });
       _logger.i('Database upgraded from $oldVersion to $newVersion');
     } catch (e, stackTrace) {
@@ -110,7 +113,8 @@ class DatabaseService {
         session_date TEXT NOT NULL,
         started_at TEXT NOT NULL,
         workout_completed INTEGER NOT NULL DEFAULT 0,
-        protein_completed INTEGER NOT NULL DEFAULT 0
+        protein_completed INTEGER NOT NULL DEFAULT 0,
+        session_note TEXT NOT NULL DEFAULT ''
       )
     ''');
 
@@ -169,9 +173,13 @@ class DatabaseService {
   }
 
   Future<void> _upgradeToV3(Transaction txn) async {
-    await txn.execute(
-      "ALTER TABLE strength_sets ADD COLUMN load_type TEXT NOT NULL DEFAULT 'external'",
-    );
+    final columns = await txn.rawQuery('PRAGMA table_info(strength_sets)');
+    final hasLoadType = columns.any((c) => c['name'] == 'load_type');
+    if (!hasLoadType) {
+      await txn.execute(
+        "ALTER TABLE strength_sets ADD COLUMN load_type TEXT NOT NULL DEFAULT 'external'",
+      );
+    }
     await txn.execute('''
       CREATE TABLE IF NOT EXISTS body_metrics(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -184,6 +192,16 @@ class DatabaseService {
     ''');
     await txn.execute(
         'CREATE INDEX IF NOT EXISTS idx_body_metrics_date ON body_metrics(log_date)');
+  }
+
+  Future<void> _upgradeToV4(Transaction txn) async {
+    final columns = await txn.rawQuery('PRAGMA table_info(session_logs)');
+    final hasSessionNote = columns.any((c) => c['name'] == 'session_note');
+    if (!hasSessionNote) {
+      await txn.execute(
+        "ALTER TABLE session_logs ADD COLUMN session_note TEXT NOT NULL DEFAULT ''",
+      );
+    }
   }
 
   // Generic query methods with automatic retry

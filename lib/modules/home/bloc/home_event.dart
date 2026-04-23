@@ -70,6 +70,15 @@ class SaveBodyMetricsEvent extends HomeEvent {
   List<Object?> get props => [weightKg, heightCm, bodyFatPercent];
 }
 
+class SaveSessionNoteEvent extends HomeEvent {
+  final String note;
+
+  const SaveSessionNoteEvent({required this.note});
+
+  @override
+  List<Object?> get props => [note];
+}
+
 class DismissSessionSummaryEvent extends HomeEvent {
   const DismissSessionSummaryEvent();
 

@@ -11,7 +11,7 @@ class ProgressPointModel {
 
   factory ProgressPointModel.fromDb(Map<String, dynamic> data) {
     return ProgressPointModel(
-      date: DateTime.parse(data['date'] as String),
+      date: DateTime.tryParse(data['date'] as String? ?? '') ?? DateTime.now(),
       strengthVolume: (data['strength_volume'] as num?)?.toDouble() ?? 0,
       cardioSeconds: (data['cardio_seconds'] as num?)?.toInt() ?? 0,
     );

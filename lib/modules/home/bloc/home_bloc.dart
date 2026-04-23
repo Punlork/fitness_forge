@@ -7,6 +7,7 @@ import 'package:flutter_base_template/models/body_metric_model.dart';
 import 'package:flutter_base_template/models/jump_rope_interval_model.dart';
 import 'package:flutter_base_template/models/progress_point_model.dart';
 import 'package:flutter_base_template/models/strength_set_model.dart';
+import 'package:flutter_base_template/models/workout_history_entry_model.dart';
 import 'package:flutter_base_template/models/workout_plan_model.dart';
 import 'package:flutter_base_template/models/workout_session_model.dart';
 import 'package:flutter_base_template/repository/workout/local/local_workout_repository.dart';
@@ -39,6 +40,8 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
       await _completeSession(emit);
     } else if (event is SaveBodyMetricsEvent) {
       await _saveBodyMetrics(event, emit);
+    } else if (event is SaveSessionNoteEvent) {
+      await _saveSessionNote(event, emit);
     } else if (event is DismissSessionSummaryEvent) {
       _dismissSessionSummary(emit);
     } else if (event is _RestTimerTickEvent) {
@@ -153,6 +156,25 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
     await _reloadSession(currentState.session, emit);
   }
 
+  Future<void> _saveSessionNote(
+    SaveSessionNoteEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+
+    await _workoutRepository.saveSessionNote(
+      sessionId: currentState.session.id,
+      note: event.note,
+    );
+    final updatedSession =
+        await _workoutRepository.getSessionById(currentState.session.id);
+    if (updatedSession == null) {
+      return;
+    }
+    await _reloadSession(updatedSession, emit);
+  }
+
   void _dismissSessionSummary(Emitter<HomeState> emit) {
     final currentState = state;
     if (currentState is! HomeReady) return;
@@ -171,11 +193,13 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
     final List<StrengthSetModel> strengthSets =
         await _workoutRepository.getStrengthSets(session.id);
     final List<ProgressPointModel> progressPoints =
-        await _workoutRepository.getRecentProgress();
+        await _workoutRepository.getRecentProgress(days: 60);
     final BodyMetricModel? latestBodyMetrics =
         await _workoutRepository.getLatestBodyMetrics();
     final List<BodyMetricModel> bodyMetricsHistory =
         await _workoutRepository.getRecentBodyMetrics();
+    final List<WorkoutHistoryEntryModel> sessionHistory =
+        await _workoutRepository.getRecentSessionHistory();
     emit(HomeReady(
       session: session,
       todayPlan: todayPlan,
@@ -184,6 +208,7 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
       progressPoints: progressPoints,
       latestBodyMetrics: latestBodyMetrics,
       bodyMetricsHistory: bodyMetricsHistory,
+      sessionHistory: sessionHistory,
       restSecondsRemaining: restSecondsRemaining,
     ));
   }
@@ -192,6 +217,10 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
     _stopRestTimer();
     int remaining = seconds;
     _restTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (isClosed) {
+        timer.cancel();
+        return;
+      }
       remaining -= 1;
       if (remaining <= 0) {
         add(const _RestTimerTickEvent(0));

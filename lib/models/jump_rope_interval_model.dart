@@ -17,12 +17,13 @@ class JumpRopeIntervalModel {
 
   factory JumpRopeIntervalModel.fromDb(Map<String, dynamic> data) {
     return JumpRopeIntervalModel(
-      id: data['id'] as int,
-      sessionId: data['session_id'] as int,
-      intervalType: data['interval_type'] as String,
-      durationSeconds: data['duration_seconds'] as int,
-      intervalOrder: data['interval_order'] as int,
-      createdAt: DateTime.parse(data['created_at'] as String),
+      id: (data['id'] as num?)?.toInt() ?? 0,
+      sessionId: (data['session_id'] as num?)?.toInt() ?? 0,
+      intervalType: data['interval_type'] as String? ?? '',
+      durationSeconds: (data['duration_seconds'] as num?)?.toInt() ?? 0,
+      intervalOrder: (data['interval_order'] as num?)?.toInt() ?? 0,
+      createdAt: DateTime.tryParse(data['created_at'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 }
