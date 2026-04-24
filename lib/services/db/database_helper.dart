@@ -1,4 +1,4 @@
-import 'package:flutter_base_template/services/db/database_service.dart';
+import 'package:forge/services/db/database_service.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {

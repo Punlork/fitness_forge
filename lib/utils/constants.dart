@@ -54,12 +54,16 @@ extension DateTimeExtension on DateTime {
 /// Utility extension for asynchronous operations
 extension AsyncExtension on Future {
   /// Add timeout to any future
-  Future timeoutAfter<T>(Duration duration,
-      {required FutureOr<T> Function()? onTimeout}) {
+  Future timeoutAfter<T>(
+    Duration duration, {
+    required FutureOr<T> Function()? onTimeout,
+  }) {
     return timeout(
       duration,
-      onTimeout:
-          onTimeout ?? () => throw TimeoutException('Operation timed out'),
+      onTimeout: onTimeout ??
+          () => throw TimeoutException(
+                'Operation timed out',
+              ),
     );
   }
 }

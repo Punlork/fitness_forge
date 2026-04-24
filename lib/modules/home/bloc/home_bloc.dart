@@ -1,16 +1,14 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_base_template/core/base_bloc.dart';
-import 'package:flutter_base_template/core/error/app_error.dart';
-import 'package:flutter_base_template/models/body_metric_model.dart';
-import 'package:flutter_base_template/models/jump_rope_interval_model.dart';
-import 'package:flutter_base_template/models/progress_point_model.dart';
-import 'package:flutter_base_template/models/strength_set_model.dart';
-import 'package:flutter_base_template/models/workout_history_entry_model.dart';
-import 'package:flutter_base_template/models/workout_plan_model.dart';
-import 'package:flutter_base_template/models/workout_session_model.dart';
-import 'package:flutter_base_template/repository/workout/local/local_workout_repository.dart';
+import 'package:forge/core/base_bloc.dart';
+import 'package:forge/core/error/app_error.dart';
+import 'package:forge/models/body_metric_model.dart';
+import 'package:forge/models/jump_rope_interval_model.dart';
+import 'package:forge/models/progress_point_model.dart';
+import 'package:forge/models/strength_set_model.dart';
+import 'package:forge/models/workout_history_entry_model.dart';
+import 'package:forge/models/workout_plan_model.dart';
+import 'package:forge/models/workout_session_model.dart';
+import 'package:forge/repository/workout/local/local_workout_repository.dart';
 import 'package:logger/logger.dart';
 
 part 'home_event.dart';
@@ -19,8 +17,6 @@ part 'home_state.dart';
 class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
   final Logger _logger = Logger();
   final LocalWorkoutRepository _workoutRepository;
-  Timer? _restTimer;
-  static const int _defaultRestSeconds = 90;
 
   HomeBloc({LocalWorkoutRepository? workoutRepository})
       : _workoutRepository = workoutRepository ?? LocalWorkoutRepository(),
@@ -44,8 +40,16 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
       await _saveSessionNote(event, emit);
     } else if (event is DismissSessionSummaryEvent) {
       _dismissSessionSummary(emit);
-    } else if (event is _RestTimerTickEvent) {
-      _handleRestTimerTick(event, emit);
+    } else if (event is LogCardioCheckEvent) {
+      await _logCardioCheck(event, emit);
+    } else if (event is LogWorkSetEvent) {
+      await _logWorkSet(event, emit);
+    } else if (event is LogTimedWorkEvent) {
+      await _logTimedWork(event, emit);
+    } else if (event is AddRoundEvent) {
+      _addRound(emit);
+    } else if (event is RemoveRoundEvent) {
+      _removeRound(event, emit);
     } else {
       emit(const HomeError(message: 'Unknown event type'));
     }
@@ -63,7 +67,6 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
 
   Future<void> _startNewSession(Emitter<HomeState> emit) async {
     _logger.i('Starting a new workout session');
-    _stopRestTimer();
     final id = await _workoutRepository.startSession();
     final session = await _workoutRepository.getLatestSessionForToday();
     if (session == null || session.id != id) {
@@ -104,25 +107,21 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
       reps: event.reps,
     );
 
-    _startRestTimer(_defaultRestSeconds);
-    await _reloadSession(currentState.session, emit,
-        restSecondsRemaining: _defaultRestSeconds);
-  }
-
-  void _handleRestTimerTick(
-      _RestTimerTickEvent event, Emitter<HomeState> emit) {
-    final currentState = state;
-    if (currentState is! HomeReady) return;
-    emit(currentState.copyWith(restSecondsRemaining: event.secondsRemaining));
+    await _reloadSession(currentState.session, emit);
   }
 
   Future<void> _completeSession(Emitter<HomeState> emit) async {
     final currentState = state;
     if (currentState is! HomeReady) return;
 
-    await _workoutRepository.completeSession(currentState.session.id);
-    final updatedSession =
-        await _workoutRepository.getSessionById(currentState.session.id);
+    await _workoutRepository.completeSession(
+      currentState.session.id,
+    );
+
+    final updatedSession = await _workoutRepository.getSessionById(
+      currentState.session.id,
+    );
+
     if (updatedSession == null) {
       return;
     }
@@ -181,59 +180,126 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
     emit(currentState.copyWith(clearSessionSummaryMessage: true));
   }
 
+  Future<void> _logCardioCheck(
+    LogCardioCheckEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+
+    await _workoutRepository.addJumpRopeInterval(
+      sessionId: currentState.session.id,
+      intervalType: currentState.todayPlan.cardioMode.name,
+      durationSeconds: currentState.todayPlan.cardioSeconds,
+      roundNumber: event.roundNumber,
+    );
+
+    await _reloadSession(currentState.session, emit);
+  }
+
+  Future<void> _logWorkSet(
+    LogWorkSetEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+
+    await _workoutRepository.addStrengthSet(
+      sessionId: currentState.session.id,
+      exerciseName: event.exerciseName,
+      reps: event.reps,
+      roundNumber: event.roundNumber,
+    );
+
+    await _reloadSession(currentState.session, emit);
+  }
+
+  Future<void> _logTimedWork(
+    LogTimedWorkEvent event,
+    Emitter<HomeState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+
+    await _workoutRepository.addStrengthSet(
+      sessionId: currentState.session.id,
+      exerciseName: event.exerciseName,
+      reps: event.durationSeconds,
+      roundNumber: event.roundNumber,
+    );
+
+    await _reloadSession(currentState.session, emit);
+  }
+
+  void _addRound(Emitter<HomeState> emit) {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+    emit(currentState.copyWith(currentRound: currentState.currentRound + 1));
+  }
+
+  void _removeRound(RemoveRoundEvent event, Emitter<HomeState> emit) {
+    final currentState = state;
+    if (currentState is! HomeReady) return;
+
+    // Remove all jump rope intervals and strength sets with the specified roundNumber
+
+    final updatedIntervals = currentState.intervals
+        .where((interval) => interval.roundNumber != event.roundNumber)
+        .toList();
+
+    final updatedStrengthSets = currentState.strengthSets
+        .where((set) => set.roundNumber != event.roundNumber)
+        .toList();
+
+    emit(
+      currentState.copyWith(
+        intervals: updatedIntervals,
+        strengthSets: updatedStrengthSets,
+        // If the removed round was the current round, decrease currentRound if needed
+        currentRound: currentState.currentRound > 0 &&
+                currentState.currentRound == event.roundNumber
+            ? currentState.currentRound - 1
+            : currentState.currentRound,
+      ),
+    );
+  }
+
   Future<void> _reloadSession(
     WorkoutSessionModel session,
-    Emitter<HomeState> emit, {
-    int restSecondsRemaining = 0,
-  }) async {
-    final WorkoutDayPlanModel todayPlan =
-        WorkoutWeekPlan.forDate(DateTime.now());
-    final List<JumpRopeIntervalModel> intervals =
-        await _workoutRepository.getJumpRopeIntervals(session.id);
-    final List<StrengthSetModel> strengthSets =
-        await _workoutRepository.getStrengthSets(session.id);
-    final List<ProgressPointModel> progressPoints =
-        await _workoutRepository.getRecentProgress(days: 60);
-    final BodyMetricModel? latestBodyMetrics =
-        await _workoutRepository.getLatestBodyMetrics();
-    final List<BodyMetricModel> bodyMetricsHistory =
-        await _workoutRepository.getRecentBodyMetrics();
-    final List<WorkoutHistoryEntryModel> sessionHistory =
-        await _workoutRepository.getRecentSessionHistory();
-    emit(HomeReady(
-      session: session,
-      todayPlan: todayPlan,
-      intervals: intervals,
-      strengthSets: strengthSets,
-      progressPoints: progressPoints,
-      latestBodyMetrics: latestBodyMetrics,
-      bodyMetricsHistory: bodyMetricsHistory,
-      sessionHistory: sessionHistory,
-      restSecondsRemaining: restSecondsRemaining,
-    ));
-  }
+    Emitter<HomeState> emit,
+  ) async {
+    final todayPlan = WorkoutWeekPlan.todayWorkout;
 
-  void _startRestTimer(int seconds) {
-    _stopRestTimer();
-    int remaining = seconds;
-    _restTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (isClosed) {
-        timer.cancel();
-        return;
-      }
-      remaining -= 1;
-      if (remaining <= 0) {
-        add(const _RestTimerTickEvent(0));
-        timer.cancel();
-        return;
-      }
-      add(_RestTimerTickEvent(remaining));
-    });
-  }
+    final intervals = await _workoutRepository.getJumpRopeIntervals(
+      session.id,
+    );
+    final strengthSets = await _workoutRepository.getStrengthSets(
+      session.id,
+    );
+    final progressPoints = await _workoutRepository.getRecentProgress(
+      days: 60,
+    );
+    final latestBodyMetrics = await _workoutRepository.getLatestBodyMetrics();
+    final bodyMetricsHistory = await _workoutRepository.getRecentBodyMetrics();
+    final sessionHistory = await _workoutRepository.getRecentSessionHistory();
 
-  void _stopRestTimer() {
-    _restTimer?.cancel();
-    _restTimer = null;
+    final currentState = state;
+    final int wasRound =
+        currentState is HomeReady ? currentState.currentRound : 0;
+
+    emit(
+      HomeReady(
+        session: session,
+        todayPlan: todayPlan,
+        intervals: intervals,
+        strengthSets: strengthSets,
+        progressPoints: progressPoints,
+        latestBodyMetrics: latestBodyMetrics,
+        bodyMetricsHistory: bodyMetricsHistory,
+        sessionHistory: sessionHistory,
+        currentRound: wasRound,
+      ),
+    );
   }
 
   @override
@@ -254,7 +320,6 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
 
   @override
   Future<void> close() async {
-    _stopRestTimer();
     await super.close();
   }
 }

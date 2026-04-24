@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_base_template/services/workout_timer_notification_service.dart';
+import 'package:forge/services/workout_timer_notification_service.dart';
 
 class HomeTimerState {
   final int workSeconds;

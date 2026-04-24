@@ -1,6 +1,6 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=/Users/tt/fvm/versions/3.24.0"
+export "FLUTTER_ROOT=/Users/tt/fvm/versions/stable"
 export "FLUTTER_APPLICATION_PATH=/Users/tt/Documents/learning/the_forge"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_TARGET=lib/main.dart"

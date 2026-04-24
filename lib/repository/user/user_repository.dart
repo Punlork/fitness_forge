@@ -1,5 +1,5 @@
-import 'package:flutter_base_template/core/base_repository.dart';
-import 'package:flutter_base_template/models/user_model.dart';
+import 'package:forge/core/base_repository.dart';
+import 'package:forge/models/user_model.dart';
 
 abstract class UserRepository extends BaseRepository {
   Future<UserModel?> getUser(int id);

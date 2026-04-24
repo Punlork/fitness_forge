@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_base_template/utils/config/app_config.dart';
+import 'package:forge/utils/config/app_config.dart';
 
 class AppError {
   final String message;

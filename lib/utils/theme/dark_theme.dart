@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import 'app_color_scheme.dart';
 import 'styles/base_color_styles.dart';
 
 /*
@@ -10,84 +12,92 @@ import 'styles/base_color_styles.dart';
 */
 
 ThemeData darkTheme(BaseColorStyles color) {
+  final colorScheme = buildAppColorScheme(
+    color,
+    brightness: Brightness.dark,
+  );
+
   TextTheme darkTheme = TextTheme(
     displayLarge: TextStyle(
-        fontSize: 57.0,
-        fontWeight: FontWeight.w800,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // For the largest text in your app.
+      fontSize: 57.0,
+      fontWeight: FontWeight.w800,
+      fontFamily: 'Gilroy',
+    ), // For the largest text in your app.
     displayMedium: TextStyle(
-        fontSize: 45.0,
-        fontWeight: FontWeight.w700,
-        fontFamily: 'Gilroy',
-        color: color
-            .primaryContent), // Large text, slightly smaller than displayLarge.
+      fontSize: 45.0,
+      fontWeight: FontWeight.w700,
+      fontFamily: 'Gilroy',
+    ), // Large text, slightly smaller than displayLarge.
     displaySmall: TextStyle(
-        fontSize: 36.0,
-        fontWeight: FontWeight.w700,
-        fontFamily: 'Gilroy',
-        color: color
-            .primaryContent), // Smaller than displayMedium but larger than headlines.
+      fontSize: 36.0,
+      fontWeight: FontWeight.w700,
+      fontFamily: 'Gilroy',
+    ), // Smaller than displayMedium but larger than headlines.
     headlineLarge: TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 32.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Large headlines.
+      fontWeight: FontWeight.bold,
+      fontSize: 32.0,
+      fontFamily: 'Gilroy',
+    ), // Large headlines.
     headlineMedium: TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 28.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Medium headlines.
+      fontWeight: FontWeight.bold,
+      fontSize: 28.0,
+      fontFamily: 'Gilroy',
+    ), // Medium headlines.
     headlineSmall: TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 24.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Small headlines.
+      fontWeight: FontWeight.bold,
+      fontSize: 24.0,
+      fontFamily: 'Gilroy',
+    ), // Small headlines.
     titleLarge: TextStyle(
-        fontSize: 22.0,
-        fontWeight: FontWeight.bold,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Large titles.
+      fontSize: 22.0,
+      fontWeight: FontWeight.bold,
+      fontFamily: 'Gilroy',
+    ), // Large titles.
     titleMedium: TextStyle(
-        fontSize: 20.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryAccent,
-        fontWeight: FontWeight.bold), // Medium titles.
+      fontSize: 20.0,
+      fontFamily: 'Gilroy',
+      fontWeight: FontWeight.bold,
+    ), // Medium titles.
     titleSmall: TextStyle(
-        fontSize: 14.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Small titles.
+      fontSize: 14.0,
+      fontFamily: 'Gilroy',
+    ), // Small titles.
     bodyLarge: TextStyle(
-        fontSize: 16.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Large body text.
+      fontSize: 16.0,
+      fontFamily: 'Gilroy',
+    ), // Large body text.
     bodyMedium: TextStyle(
-        fontSize: 14.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Medium body text.
+      fontSize: 14.0,
+      fontFamily: 'Gilroy',
+    ), // Medium body text.
     bodySmall: TextStyle(
-        fontSize: 12.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Small body text.
+      fontSize: 12.0,
+      fontFamily: 'Gilroy',
+    ), // Small body text.
     labelLarge: TextStyle(
-        fontSize: 14.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Large labels.
+      fontSize: 14.0,
+      fontFamily: 'Gilroy',
+    ), // Large labels.
     labelMedium: TextStyle(
-        fontSize: 12.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Medium labels.
+      fontSize: 12.0,
+      fontFamily: 'Gilroy',
+    ), // Medium labels.
     labelSmall: TextStyle(
-        fontSize: 10.0,
-        fontFamily: 'Gilroy',
-        color: color.primaryContent), // Small labels.
+      fontSize: 10.0,
+      fontFamily: 'Gilroy',
+    ), // Small labels.
+  );
+
+  darkTheme = GoogleFonts.interTextTheme(darkTheme).apply(
+    bodyColor: colorScheme.onSurface,
+    displayColor: colorScheme.onSurface,
   );
 
   return ThemeData(
     brightness: Brightness.dark,
-    fontFamily: 'Gilroy',
-    scaffoldBackgroundColor: color.background,
-    primaryColor: color.primaryAccent,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: colorScheme.surface,
+    primaryColor: colorScheme.primary,
     appBarTheme: AppBarTheme(
       backgroundColor: color.appBarBackground,
       foregroundColor: color.appBarPrimaryContent,
@@ -96,12 +106,12 @@ ThemeData darkTheme(BaseColorStyles color) {
     ),
     textTheme: darkTheme,
     iconTheme: IconThemeData(
-      color: color.primaryContent,
+      color: colorScheme.onSurface,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: color.buttonBackground,
-        foregroundColor: color.buttonPrimaryContent,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
       ),
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
@@ -112,11 +122,12 @@ ThemeData darkTheme(BaseColorStyles color) {
       unselectedLabelStyle: TextStyle(color: color.bottomTabBarLabelUnselected),
     ),
     cardTheme: CardThemeData(
-      color: color.surfaceBackground,
-      elevation: 4,
+      color: colorScheme.surfaceContainerLow,
+      elevation: 0,
+      shadowColor: colorScheme.shadow,
     ),
     dividerTheme: DividerThemeData(
-      color: color.primaryContent.withAlpha(30),
+      color: colorScheme.outlineVariant,
     ),
   );
 }

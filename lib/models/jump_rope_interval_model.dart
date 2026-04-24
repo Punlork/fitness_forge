@@ -4,6 +4,7 @@ class JumpRopeIntervalModel {
   final String intervalType;
   final int durationSeconds;
   final int intervalOrder;
+  final int roundNumber;
   final DateTime createdAt;
 
   const JumpRopeIntervalModel({
@@ -12,6 +13,7 @@ class JumpRopeIntervalModel {
     required this.intervalType,
     required this.durationSeconds,
     required this.intervalOrder,
+    this.roundNumber = 0,
     required this.createdAt,
   });
 
@@ -22,6 +24,7 @@ class JumpRopeIntervalModel {
       intervalType: data['interval_type'] as String? ?? '',
       durationSeconds: (data['duration_seconds'] as num?)?.toInt() ?? 0,
       intervalOrder: (data['interval_order'] as num?)?.toInt() ?? 0,
+      roundNumber: (data['round_number'] as num?)?.toInt() ?? 0,
       createdAt: DateTime.tryParse(data['created_at'] as String? ?? '') ??
           DateTime.now(),
     );

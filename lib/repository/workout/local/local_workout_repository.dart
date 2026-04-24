@@ -1,10 +1,10 @@
-import 'package:flutter_base_template/core/base_repository.dart';
-import 'package:flutter_base_template/models/body_metric_model.dart';
-import 'package:flutter_base_template/models/jump_rope_interval_model.dart';
-import 'package:flutter_base_template/models/progress_point_model.dart';
-import 'package:flutter_base_template/models/strength_set_model.dart';
-import 'package:flutter_base_template/models/workout_history_entry_model.dart';
-import 'package:flutter_base_template/models/workout_session_model.dart';
+import 'package:forge/core/base_repository.dart';
+import 'package:forge/models/body_metric_model.dart';
+import 'package:forge/models/jump_rope_interval_model.dart';
+import 'package:forge/models/progress_point_model.dart';
+import 'package:forge/models/strength_set_model.dart';
+import 'package:forge/models/workout_history_entry_model.dart';
+import 'package:forge/models/workout_session_model.dart';
 
 class LocalWorkoutRepository extends BaseRepository {
   Future<int> startSession({DateTime? now}) async {
@@ -42,6 +42,7 @@ class LocalWorkoutRepository extends BaseRepository {
     required int sessionId,
     required String intervalType,
     required int durationSeconds,
+    int roundNumber = 0,
   }) async {
     await handleDatabaseOperation(() async {
       final db = await databaseService.database;
@@ -56,6 +57,7 @@ class LocalWorkoutRepository extends BaseRepository {
         'interval_type': intervalType,
         'duration_seconds': durationSeconds,
         'interval_order': nextOrder,
+        'round_number': roundNumber,
         'created_at': DateTime.now().toIso8601String(),
       });
     });
@@ -64,9 +66,10 @@ class LocalWorkoutRepository extends BaseRepository {
   Future<void> addStrengthSet({
     required int sessionId,
     required String exerciseName,
-    required double weight,
-    required StrengthLoadType loadType,
+    double weight = 0,
+    StrengthLoadType loadType = StrengthLoadType.bodyweight,
     required int reps,
+    int roundNumber = 0,
   }) async {
     await handleDatabaseOperation(() async {
       final db = await databaseService.database;
@@ -76,6 +79,7 @@ class LocalWorkoutRepository extends BaseRepository {
         'weight': weight,
         'load_type': loadType.name,
         'reps': reps,
+        'round_number': roundNumber,
         'created_at': DateTime.now().toIso8601String(),
       });
     });

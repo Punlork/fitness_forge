@@ -1,5 +1,5 @@
-import 'package:flutter_base_template/main.dart';
-import 'package:flutter_base_template/utils/config/flavor_config.dart';
+import 'package:forge/main.dart';
+import 'package:forge/utils/config/flavor_config.dart';
 
 void main() {
   FlavorConfig(flavor: Flavor.production);

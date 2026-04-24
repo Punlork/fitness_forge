@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_base_template/utils/theme/theme.dart';
+import 'package:forge/utils/theme/theme.dart';
 import 'package:theme_provider/theme_provider.dart';
-import 'package:flutter_base_template/core/error/app_error.dart';
+import 'package:forge/core/error/app_error.dart';
 
 class DebouncedButton extends StatefulWidget {
   final Widget textWidget;

@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_base_template/utils/config/app_config.dart';
+import 'package:forge/utils/config/app_config.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_base_template/utils/config/bloc_dispatcher.dart';
+import 'package:forge/utils/config/bloc_dispatcher.dart';
 import 'package:logger/logger.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:flutter_base_template/core/error/app_error.dart';
+import 'package:forge/core/error/app_error.dart';
 
 class PushNotificationService {
   static PushNotificationService? _instance;

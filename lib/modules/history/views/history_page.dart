@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_base_template/models/workout_history_entry_model.dart';
-import 'package:flutter_base_template/repository/workout/local/local_workout_repository.dart';
+import 'package:forge/models/workout_history_entry_model.dart';
+import 'package:forge/repository/workout/local/local_workout_repository.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -174,8 +174,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
                     sliver: SliverList.separated(
                       itemCount: selectedEvents.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: 12),
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final entry = selectedEvents[index];
                         return _HistoryEntryCard(entry: entry);

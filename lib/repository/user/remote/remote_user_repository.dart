@@ -1,8 +1,8 @@
-import 'package:flutter_base_template/core/base_repository.dart';
-import 'package:flutter_base_template/models/user_model.dart';
-import 'package:flutter_base_template/repository/user/user_repository.dart';
-import 'package:flutter_base_template/repository/user/local/local_user_repository.dart';
-import 'package:flutter_base_template/utils/networking/url_provider.dart';
+import 'package:forge/core/base_repository.dart';
+import 'package:forge/models/user_model.dart';
+import 'package:forge/repository/user/user_repository.dart';
+import 'package:forge/repository/user/local/local_user_repository.dart';
+import 'package:forge/utils/networking/url_provider.dart';
 
 class RemoteUserRepository extends BaseRepository implements UserRepository {
   final LocalUserRepository _localRepository;

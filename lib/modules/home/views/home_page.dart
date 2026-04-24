@@ -1,18 +1,18 @@
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_base_template/models/strength_set_model.dart';
-import 'package:flutter_base_template/models/workout_plan_model.dart';
-import 'package:flutter_base_template/modules/home/bloc/home_bloc.dart';
-import 'package:flutter_base_template/modules/home/bloc/home_timer_cubit.dart';
-import 'package:flutter_base_template/modules/home/views/widgets/home_progress_tab.dart';
-import 'package:flutter_base_template/modules/home/views/widgets/home_timer_tab.dart';
-import 'package:flutter_base_template/modules/home/views/widgets/home_today_tab.dart';
-import 'package:flutter_base_template/modules/home/views/widgets/sticky_tab_bar_delegate.dart';
-import 'package:flutter_base_template/modules/home/views/widgets/top_session_header.dart';
+import 'package:forge/models/workout_plan_model.dart';
+import 'package:forge/modules/home/bloc/home_bloc.dart';
+import 'package:forge/modules/home/bloc/home_timer_cubit.dart';
+import 'package:forge/modules/home/views/widgets/home_progress_tab.dart';
+import 'package:forge/modules/home/views/widgets/home_timer_tab.dart';
+import 'package:forge/modules/dashboard/home_dashboard_tab.dart';
+import 'package:forge/modules/home/views/widgets/top_session_header.dart';
+import 'package:forge/utils/constants/app_assets.dart';
+import 'package:forge/utils/widgets/app_header_text.dart';
+import 'package:forge/utils/widgets/app_svg_icon.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:theme_provider/theme_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,16 +25,13 @@ class _HomePageState extends State<HomePage>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   late final TabController _tabController;
   int _selectedTab = 0;
+  double _top = 0;
   late final HomeBloc _homeBloc;
   late final HomeTimerCubit _homeTimerCubit;
-  final _exerciseController = TextEditingController();
-  final _weightController = TextEditingController();
-  final _repsController = TextEditingController();
   final _bodyWeightController = TextEditingController();
   final _heightController = TextEditingController();
   final _bodyFatController = TextEditingController();
   final _sessionNoteController = TextEditingController();
-  StrengthLoadType _selectedLoadType = StrengthLoadType.bodyweight;
 
   @override
   void initState() {
@@ -47,9 +44,7 @@ class _HomePageState extends State<HomePage>
       onWorkPhaseCompleted: (seconds) {
         _homeBloc.add(
           AddJumpRopeIntervalEvent(
-            intervalType: _cardioModeLabel(
-              WorkoutWeekPlan.forDate(DateTime.now()).cardioMode,
-            ),
+            intervalType: WorkoutWeekPlan.todayWorkout.cardioMode.label,
             durationSeconds: seconds,
           ),
         );
@@ -59,7 +54,8 @@ class _HomePageState extends State<HomePage>
 
   void _onTabChanged() {
     if (_tabController.index != _selectedTab) {
-      setState(() => _selectedTab = _tabController.index);
+      _selectedTab = _tabController.index;
+      setState(() {});
     }
   }
 
@@ -75,9 +71,6 @@ class _HomePageState extends State<HomePage>
     _tabController.dispose();
     _homeTimerCubit.close();
     _homeBloc.close();
-    _exerciseController.dispose();
-    _weightController.dispose();
-    _repsController.dispose();
     _bodyWeightController.dispose();
     _heightController.dispose();
     _bodyFatController.dispose();
@@ -158,78 +151,91 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildScrollableBody(BuildContext context, HomeReady state) {
     final colorScheme = Theme.of(context).colorScheme;
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
+
+    final pinnedHeaderHeight = statusBarHeight + kToolbarHeight;
 
     return ExtendedNestedScrollView(
       physics: const BouncingScrollPhysics(
         parent: AlwaysScrollableScrollPhysics(),
       ),
-      pinnedHeaderSliverHeightBuilder: () => 64,
+      pinnedHeaderSliverHeightBuilder: () => pinnedHeaderHeight,
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverAppBar(
-          expandedHeight: 140,
-          floating: true,
-          pinned: true,
-          snap: true,
+          expandedHeight: 220,
           elevation: 0,
           scrolledUnderElevation: 0,
-          flexibleSpace: FlexibleSpaceBar(
-            titlePadding:
-                const EdgeInsetsDirectional.only(start: 20, bottom: 16),
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _tabTitle,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+          backgroundColor: colorScheme.surface,
+          flexibleSpace: LayoutBuilder(
+            builder: (context, constraints) {
+              _top = constraints.biggest.height;
+
+              return FlexibleSpaceBar(
+                titlePadding: const EdgeInsetsDirectional.only(
+                  start: 20,
+                  bottom: 16,
                 ),
-                Text(
-                  _tabSubtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
+                title: _top == pinnedHeaderHeight
+                    ? AppHeaderText(
+                        '${state.todayPlan.dayLabel} \u2022 ${state.todayPlan.focus}',
+                        level: AppHeaderLevel.subsection,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : SizedBox(),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        colorScheme.primary.withValues(alpha: 0.10),
+                        colorScheme.surface,
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: kToolbarHeight),
+                        Expanded(
+                          child: TopSessionHeader(state: state),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
-            ),
-            background: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    colorScheme.primary.withValues(alpha: 0.12),
-                    colorScheme.surface,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
+              );
+            },
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.history_outlined),
+              icon: const AppSvgIcon(
+                assetName: AppAssets.historyIcon,
+              ),
               tooltip: 'Workout history',
               onPressed: () => context.push('/history'),
             ),
-            IconButton(
-              icon: Icon(
-                ThemeProvider.themeOf(context).id == 'lightthemeid'
-                    ? Icons.dark_mode_outlined
-                    : Icons.light_mode_outlined,
-              ),
-              tooltip: 'Toggle theme',
-              onPressed: () {
-                final currentThemeId = ThemeProvider.themeOf(context).id;
-                final newThemeId = currentThemeId == 'lightthemeid'
-                    ? 'darkthemeid'
-                    : 'lightthemeid';
+            // IconButton(
+            //   icon: Icon(
+            //     ThemeProvider.themeOf(context).id == 'lightthemeid'
+            //         ? Icons.dark_mode_outlined
+            //         : Icons.light_mode_outlined,
+            //   ),
+            //   tooltip: 'Toggle theme',
+            //   onPressed: () {
+            //     final currentThemeId = ThemeProvider.themeOf(context).id;
+            //     final newThemeId = currentThemeId == 'lightthemeid'
+            //         ? 'darkthemeid'
+            //         : 'lightthemeid';
 
-                ThemeProvider.controllerOf(context).setTheme(newThemeId);
-              },
-            ),
+            //     ThemeProvider.controllerOf(context).setTheme(newThemeId);
+            //   },
+            // ),
             IconButton(
-              icon: const Icon(Icons.restart_alt_rounded),
+              icon: const AppSvgIcon(
+                assetName: AppAssets.restartIcon,
+              ),
               tooltip: 'Start new session',
               onPressed: () {
                 _showSnackBar('New workout session started.');
@@ -239,170 +245,125 @@ class _HomePageState extends State<HomePage>
             const SizedBox(width: 8),
           ],
         ),
-        SliverToBoxAdapter(
-          child: TopSessionHeader(state: state),
-        ),
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: StickyTabBarDelegate(
-            child: Container(
-              color: colorScheme.surface,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(
-                    value: 0,
-                    icon: Icon(Icons.today, size: 18),
-                    label: Text('Today'),
-                  ),
-                  ButtonSegment(
-                    value: 1,
-                    icon: Icon(Icons.timer_outlined, size: 18),
-                    label: Text('Timer'),
-                  ),
-                  ButtonSegment(
-                    value: 2,
-                    icon: Icon(Icons.show_chart, size: 18),
-                    label: Text('Progress'),
-                  ),
-                ],
-                selected: {_tabController.index},
-                onSelectionChanged: (selection) {
-                  _tabController.animateTo(selection.first);
-                },
-              ),
-            ),
-          ),
-        ),
       ],
-      body: TabBarView(
-        controller: _tabController,
-        physics: const NeverScrollableScrollPhysics(),
+      body: Column(
         children: [
-          ExtendedVisibilityDetector(
-            uniqueKey: const Key('TodayTab'),
-            child: HomeTodayTab(
-              state: state,
-              exerciseController: _exerciseController,
-              weightController: _weightController,
-              repsController: _repsController,
-              bodyWeightController: _bodyWeightController,
-              heightController: _heightController,
-              bodyFatController: _bodyFatController,
-              sessionNoteController: _sessionNoteController,
-              selectedLoadType: _selectedLoadType,
-              onSubmitStrengthSet: () => _submitStrengthSet(context),
-              onSelectStrengthMove: (move) {
-                _exerciseController.text = move;
-              },
-              onLoadTypeChanged: (type) {
-                setState(() {
-                  _selectedLoadType = type;
-                  if (type == StrengthLoadType.bodyweight) {
-                    _weightController.clear();
-                  }
-                });
-              },
-              onSaveBodyMetrics: () => _saveBodyMetrics(context),
-              onSaveSessionNote: () => _saveSessionNote(context),
-              onCompleteSession: () {
-                context
-                    .read<HomeBloc>()
-                    .add(const CompleteSessionEvent());
-              },
-            ),
+          TabBar(
+            controller: _tabController,
+            indicatorColor: Colors.transparent,
+            isScrollable: false,
+            unselectedLabelColor: Colors.grey.shade700,
+            tabs: <Tab>[
+              Tab(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppSvgIcon(
+                      assetName: AppAssets.dashboardIcon,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    AppHeaderText(
+                      'Dashboard',
+                      level: AppHeaderLevel.subsection,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+              Tab(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppSvgIcon(
+                      assetName: AppAssets.timerIcon,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    AppHeaderText(
+                      'Timer',
+                      level: AppHeaderLevel.subsection,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+              Tab(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppSvgIcon(
+                      assetName: AppAssets.progressIcon,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    AppHeaderText(
+                      'Progress',
+                      level: AppHeaderLevel.subsection,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          ExtendedVisibilityDetector(
-            uniqueKey: const Key('TimerTab'),
-            child: BlocBuilder<HomeTimerCubit, HomeTimerState>(
-              builder: (context, timerState) {
-                final timerCubit = context.read<HomeTimerCubit>();
-                return HomeTimerTab(
-                  state: state,
-                  workSeconds: timerState.workSeconds,
-                  restSeconds: timerState.restSeconds,
-                  targetRounds: timerState.targetRounds,
-                  round: timerState.round,
-                  remainingSeconds: timerState.remainingSeconds,
-                  isWorkPhase: timerState.isWorkPhase,
-                  isRunning: timerState.isRunning,
-                  onWorkSecondsChanged: timerCubit.onWorkSecondsChanged,
-                  onRestSecondsChanged: timerCubit.onRestSecondsChanged,
-                  onTargetRoundsChanged: timerCubit.onTargetRoundsChanged,
-                  onToggleStartPause: timerCubit.toggleStartPause,
-                  onReset: timerCubit.resetTimer,
-                  onSkipPhase: timerCubit.skipPhase,
-                );
-              },
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                ExtendedVisibilityDetector(
+                  uniqueKey: const Key('DashboardTab'),
+                  child: HomeDashboardTab(
+                    state: state,
+                    bodyWeightController: _bodyWeightController,
+                    heightController: _heightController,
+                    bodyFatController: _bodyFatController,
+                    sessionNoteController: _sessionNoteController,
+                    onSaveBodyMetrics: () => _saveBodyMetrics(context),
+                    onSaveSessionNote: () => _saveSessionNote(context),
+                    onCompleteSession: () => context.read<HomeBloc>().add(
+                          const CompleteSessionEvent(),
+                        ),
+                  ),
+                ),
+                ExtendedVisibilityDetector(
+                  uniqueKey: const Key('TimerTab'),
+                  child: BlocBuilder<HomeTimerCubit, HomeTimerState>(
+                    builder: (context, timerState) {
+                      final timerCubit = context.read<HomeTimerCubit>();
+                      return HomeTimerTab(
+                        state: state,
+                        workSeconds: timerState.workSeconds,
+                        restSeconds: timerState.restSeconds,
+                        targetRounds: timerState.targetRounds,
+                        round: timerState.round,
+                        remainingSeconds: timerState.remainingSeconds,
+                        isWorkPhase: timerState.isWorkPhase,
+                        isRunning: timerState.isRunning,
+                        onWorkSecondsChanged: timerCubit.onWorkSecondsChanged,
+                        onRestSecondsChanged: timerCubit.onRestSecondsChanged,
+                        onTargetRoundsChanged: timerCubit.onTargetRoundsChanged,
+                        onToggleStartPause: timerCubit.toggleStartPause,
+                        onReset: timerCubit.resetTimer,
+                        onSkipPhase: timerCubit.skipPhase,
+                      );
+                    },
+                  ),
+                ),
+                ExtendedVisibilityDetector(
+                  uniqueKey: const Key('ProgressTab'),
+                  child: HomeProgressTab(state: state),
+                ),
+              ],
             ),
-          ),
-          ExtendedVisibilityDetector(
-            uniqueKey: const Key('ProgressTab'),
-            child: HomeProgressTab(state: state),
           ),
         ],
       ),
     );
-  }
-
-  String get _tabTitle {
-    switch (_selectedTab) {
-      case 1:
-        return 'Timer Studio';
-      case 2:
-        return 'Progress Insights';
-      case 0:
-      default:
-        return 'Today\'s Session';
-    }
-  }
-
-  String get _tabSubtitle {
-    switch (_selectedTab) {
-      case 1:
-        return 'Run intervals without losing your place.';
-      case 2:
-        return 'See what is improving and what is lagging.';
-      case 0:
-      default:
-        return 'Your plan, logs, and actions in one place.';
-    }
-  }
-
-  void _submitStrengthSet(BuildContext context) {
-    final exerciseName = _exerciseController.text.trim();
-    final enteredWeight = double.tryParse(_weightController.text.trim());
-    final reps = int.tryParse(_repsController.text.trim());
-
-    if (exerciseName.isEmpty || reps == null || reps <= 0) {
-      _showSnackBar('Enter an exercise and a valid rep count.');
-      return;
-    }
-
-    if (_selectedLoadType != StrengthLoadType.bodyweight &&
-        enteredWeight == null) {
-      _showSnackBar('Enter a load for assisted or external sets.');
-      return;
-    }
-
-    final double finalWeight =
-        _selectedLoadType == StrengthLoadType.bodyweight ? 0 : enteredWeight!;
-
-    context.read<HomeBloc>().add(
-          AddStrengthSetEvent(
-            exerciseName: exerciseName,
-            weight: finalWeight,
-            loadType: _selectedLoadType,
-            reps: reps,
-          ),
-        );
-
-    HapticFeedback.mediumImpact();
-    _repsController.clear();
-    if (_selectedLoadType == StrengthLoadType.bodyweight) {
-      _weightController.clear();
-    }
-    _showSnackBar('Strength set saved. Rest timer started.');
   }
 
   void _saveBodyMetrics(BuildContext context) {
@@ -460,21 +421,4 @@ class _HomePageState extends State<HomePage>
         SnackBar(content: Text(message)),
       );
   }
-
-  String _cardioModeLabel(CardioMode mode) {
-    switch (mode) {
-      case CardioMode.highIntensity:
-        return 'hiit';
-      case CardioMode.variable:
-        return 'variable';
-      case CardioMode.easy:
-        return 'easy';
-      case CardioMode.none:
-        return 'rest';
-      case CardioMode.steady:
-        return 'steady';
-    }
-  }
 }
-
-

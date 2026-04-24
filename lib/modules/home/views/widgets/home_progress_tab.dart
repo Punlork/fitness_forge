@@ -1,8 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_base_template/models/strength_set_model.dart';
-import 'package:flutter_base_template/models/workout_history_entry_model.dart';
-import 'package:flutter_base_template/modules/home/bloc/home_bloc.dart';
+import 'package:forge/models/strength_set_model.dart';
+import 'package:forge/models/workout_history_entry_model.dart';
+import 'package:forge/modules/home/bloc/home_bloc.dart';
 
 class HomeProgressTab extends StatefulWidget {
   final HomeReady state;

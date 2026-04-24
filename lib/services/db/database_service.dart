@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:logger/logger.dart';
-import 'package:flutter_base_template/core/error/app_error.dart';
+import 'package:forge/core/error/app_error.dart';
 
 class DatabaseService {
   static DatabaseService? _instance;
@@ -11,7 +11,7 @@ class DatabaseService {
 
   // Database version and name
   static const _databaseName = "app_database.db";
-  static const _databaseVersion = 4;
+  static const _databaseVersion = 5;
 
   // Private constructor
   DatabaseService._();
@@ -94,6 +94,9 @@ class DatabaseService {
         if (oldVersion < 4) {
           await _upgradeToV4(txn);
         }
+        if (oldVersion < 5) {
+          await _upgradeToV5(txn);
+        }
       });
       _logger.i('Database upgraded from $oldVersion to $newVersion');
     } catch (e, stackTrace) {
@@ -125,6 +128,7 @@ class DatabaseService {
         interval_type TEXT NOT NULL,
         duration_seconds INTEGER NOT NULL,
         interval_order INTEGER NOT NULL,
+        round_number INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
         FOREIGN KEY (session_id) REFERENCES session_logs(id) ON DELETE CASCADE
       )
@@ -135,9 +139,10 @@ class DatabaseService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id INTEGER NOT NULL,
         exercise_name TEXT NOT NULL,
-        weight REAL NOT NULL,
-        load_type TEXT NOT NULL DEFAULT 'external',
-        reps INTEGER NOT NULL,
+        weight REAL NOT NULL DEFAULT 0,
+        load_type TEXT NOT NULL DEFAULT 'bodyweight',
+        reps INTEGER NOT NULL DEFAULT 0,
+        round_number INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
         FOREIGN KEY (session_id) REFERENCES session_logs(id) ON DELETE CASCADE
       )
@@ -200,6 +205,22 @@ class DatabaseService {
     if (!hasSessionNote) {
       await txn.execute(
         "ALTER TABLE session_logs ADD COLUMN session_note TEXT NOT NULL DEFAULT ''",
+      );
+    }
+  }
+
+  Future<void> _upgradeToV5(Transaction txn) async {
+    final setColumns = await txn.rawQuery('PRAGMA table_info(strength_sets)');
+    if (!setColumns.any((c) => c['name'] == 'round_number')) {
+      await txn.execute(
+        'ALTER TABLE strength_sets ADD COLUMN round_number INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+    final intervalColumns =
+        await txn.rawQuery('PRAGMA table_info(jump_rope_intervals)');
+    if (!intervalColumns.any((c) => c['name'] == 'round_number')) {
+      await txn.execute(
+        'ALTER TABLE jump_rope_intervals ADD COLUMN round_number INTEGER NOT NULL DEFAULT 0',
       );
     }
   }

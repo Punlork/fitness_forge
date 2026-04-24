@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_base_template/modules/home/bloc/home_bloc.dart';
+import 'package:forge/modules/home/bloc/home_bloc.dart';
 
 class HomeTimerTab extends StatelessWidget {
   final HomeReady state;

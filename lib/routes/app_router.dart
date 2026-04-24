@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:flutter_base_template/modules/history/views/history_page.dart';
-import 'package:flutter_base_template/modules/home/views/home_page.dart';
+import 'package:forge/modules/history/views/history_page.dart';
+import 'package:forge/modules/home/views/home_page.dart';
 // Example:
-// import 'package:flutter_base_template/modules/profile/views/profile_page.dart';
-// import 'package:flutter_base_template/modules/settings/views/settings_page.dart';
-import 'package:flutter_base_template/routes/app_routes.dart';
+// import 'package:forge/modules/profile/views/profile_page.dart';
+// import 'package:forge/modules/settings/views/settings_page.dart';
+import 'package:forge/routes/app_routes.dart';
 
 class AppRouter {
   // Navigator keys

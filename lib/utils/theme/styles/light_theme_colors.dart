@@ -13,51 +13,50 @@ class LightThemeColors implements BaseColorStyles {
   Color get background => const Color(0xFFFFFFFF);
 
   @override
-  Color get primaryContent => const Color(0xFF000000);
+  Color get primaryContent => const Color(0xFF111827);
   @override
-  Color get primaryAccent => const Color(0xffB3142E);
+  Color get primaryAccent => const Color(0xFF10B981);
 
   @override
-  Color get surfaceBackground => Colors.white;
+  Color get surfaceBackground => const Color(0xFFF8FAFC);
   @override
-  Color get surfaceContent => Colors.black;
+  Color get surfaceContent => const Color(0xFF111827);
 
   // app bar
   @override
-  Color get appBarBackground => const Color(0xffB3142E);
+  Color get appBarBackground => const Color(0xFF10B981);
   @override
   Color get appBarPrimaryContent => Colors.white;
 
   // buttons
   @override
-  Color get buttonBackground => const Color(0xffB3142E);
+  Color get buttonBackground => const Color(0xFF10B981);
   @override
   Color get buttonPrimaryContent => Colors.white;
 
   // bottom tab bar
   @override
-  Color get bottomTabBarBackground => Colors.white;
+  Color get bottomTabBarBackground => const Color(0xFFFFFFFF);
 
   // bottom tab bar - icons
   @override
-  Color get bottomTabBarIconSelected => const Color(0xffB3142E);
+  Color get bottomTabBarIconSelected => const Color(0xFF10B981);
   @override
-  Color get bottomTabBarIconUnselected => Colors.black54;
+  Color get bottomTabBarIconUnselected => const Color(0xFF64748B);
 
   // bottom tab bar - label
   @override
-  Color get bottomTabBarLabelUnselected => Colors.black45;
+  Color get bottomTabBarLabelUnselected => const Color(0xFF64748B);
   @override
-  Color get bottomTabBarLabelSelected => Colors.black;
+  Color get bottomTabBarLabelSelected => const Color(0xFF111827);
 
   // InputDecorator
   @override
-  Color get inputFillColor => const Color(
-      0xffF5F4F9); // Color(0xFFE1E1E1); // This is a light grey for light theme.
+  Color get inputFillColor => const Color(0xFFF1F5F9);
   @override
-  Color get inputErrorLabelColor => Colors.red;
+  Color get inputErrorLabelColor => const Color(0xFFDC2626);
   @override
-  Color get inputFocusedLabelColor => Colors.green;
+  Color get inputFocusedLabelColor => const Color(0xFF10B981);
   @override
   Color get inputDefaultLabelColor =>
       const Color(0xFF000000); // This matches the primaryContent color.
@@ -65,8 +64,7 @@ class LightThemeColors implements BaseColorStyles {
   Color get selectedValuesTextColor =>
       const Color(0xFF000000); // Black for light theme.
   @override
-  Color get textfieldBorderColor => const Color(0xffB3142E).withAlpha(89);
+  Color get textfieldBorderColor => const Color(0xFFCBD5E1);
   @override
-  Color get labelTextColor =>
-      const Color(0xff999999); // Label text color for light theme.
+  Color get labelTextColor => const Color(0xFF64748B);
 }

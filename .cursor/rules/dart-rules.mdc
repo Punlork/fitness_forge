@@ -31,7 +31,7 @@ return Column(
 
 // GOOD: Full package import
 import 'package:theme_provider/theme_provider.dart';
-import 'package:flutter_base_template/modules/home/bloc/home_bloc.dart';
+import 'package:forge/modules/home/bloc/home_bloc.dart';
 
 // BAD: Short/ambiguous relative import
 import 'file.dart';

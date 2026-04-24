@@ -1,6 +1,6 @@
-import 'package:flutter_base_template/core/error/app_error.dart';
-import 'package:flutter_base_template/services/db/database_service.dart';
-import 'package:flutter_base_template/utils/networking/api_client.dart';
+import 'package:forge/core/error/app_error.dart';
+import 'package:forge/services/db/database_service.dart';
+import 'package:forge/utils/networking/api_client.dart';
 import 'package:logger/logger.dart';
 
 abstract class BaseRepository {

@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_base_template/utils/config/app_config.dart';
-import 'package:flutter_base_template/utils/networking/url_provider.dart';
-import 'package:flutter_base_template/utils/shared_prefs.dart';
+import 'package:forge/utils/config/app_config.dart';
+import 'package:forge/utils/networking/url_provider.dart';
+import 'package:forge/utils/shared_prefs.dart';
 import 'package:logger/logger.dart';
-import 'package:flutter_base_template/core/error/app_error.dart';
+import 'package:forge/core/error/app_error.dart';
 
 class ApiClient {
   final Dio _dio;

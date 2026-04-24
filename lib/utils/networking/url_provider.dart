@@ -1,5 +1,5 @@
-import 'package:flutter_base_template/utils/config/app_config.dart';
-import 'package:flutter_base_template/utils/config/flavor_config.dart';
+import 'package:forge/utils/config/app_config.dart';
+import 'package:forge/utils/config/flavor_config.dart';
 
 class URLProvider {
   static final URLProvider _instance = URLProvider._internal();

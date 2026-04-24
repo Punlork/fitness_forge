@@ -1,165 +1,101 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_base_template/modules/home/bloc/home_bloc.dart';
+import 'package:forge/modules/home/bloc/home_bloc.dart';
+import 'package:forge/utils/constants/app_assets.dart';
+import 'package:forge/utils/widgets/app_header_text.dart';
+import 'package:forge/utils/widgets/app_svg_icon.dart';
 
 class TopSessionHeader extends StatelessWidget {
   final HomeReady state;
 
-  const TopSessionHeader({required this.state, super.key});
+  const TopSessionHeader({
+    required this.state,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary.withValues(alpha: 0.18),
-            colorScheme.surface,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
           ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+            AppHeaderText(
+              '${state.todayPlan.dayLabel} • ${state.todayPlan.focus}',
+              level: AppHeaderLevel.page,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${state.todayPlan.cardioSeconds}s ${state.todayPlan.cardioMode.name} \u2192 ${state.todayPlan.workSeconds}s ${state.todayPlan.workDescription}',
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.15,
+                height: 1.25,
+                color: colorScheme.onSurface.withValues(alpha: 0.72),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${state.todayPlan.dayLabel} \u2022 ${state.todayPlan.focus}',
-                              style: textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              state.todayPlan.cardioInstruction,
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: textTheme.bodyMedium?.color
-                                    ?.withValues(alpha: 0.75),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      CompletionRing(score: state.completionScore),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      HeaderStatChip(
-                        icon: Icons.fitness_center,
-                        label: 'Sets',
-                        value: '${state.strengthSets.length}',
-                      ),
-                      HeaderStatChip(
-                        icon: Icons.timer_outlined,
-                        label: 'Cardio',
-                        value: '${state.cardioSeconds}s',
-                      ),
-                      HeaderStatChip(
-                        icon: Icons.local_fire_department_outlined,
-                        label: 'Volume',
-                        value: state.totalStrengthVolume.toStringAsFixed(0),
-                      ),
-                      if (state.restSecondsRemaining > 0)
-                        HeaderStatChip(
-                          icon: Icons.hourglass_bottom,
-                          label: 'Rest',
-                          value: '${state.restSecondsRemaining}s',
-                          emphasized: true,
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+            ),
+            const Spacer(),
+            Row(
+              spacing: 8,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                HeaderStatChip(
+                  iconAssetName: AppAssets.roundsIcon,
+                  label: 'Rounds',
+                  value: '${state.computedRound}',
+                ),
+                HeaderStatChip(
+                  iconAssetName: AppAssets.cardioIcon,
+                  label: 'Cardio',
+                  value: _formatDuration(state.cardioSeconds),
+                ),
+                HeaderStatChip(
+                  iconAssetName: AppAssets.volumeIcon,
+                  label: 'Volume',
+                  value: state.totalStrengthVolume.toStringAsFixed(0),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class CompletionRing extends StatelessWidget {
-  final int score;
-
-  const CompletionRing({required this.score, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final double progress = (score / 100).clamp(0, 1).toDouble();
-
-    return SizedBox(
-      width: 74,
-      height: 74,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          SizedBox(
-            width: 74,
-            height: 74,
-            child: CircularProgressIndicator(
-              value: progress,
-              strokeWidth: 7,
-              backgroundColor: colorScheme.primary.withValues(alpha: 0.12),
-              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-            ),
-          ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$score%',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Text(
-                'done',
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+  String _formatDuration(int totalSeconds) {
+    if (totalSeconds < 60) return '${totalSeconds}s';
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    if (seconds == 0) return '${minutes}m';
+    return '${minutes}m ${seconds}s';
   }
 }
 
 class HeaderStatChip extends StatelessWidget {
-  final IconData icon;
+  final String iconAssetName;
   final String label;
   final String value;
   final bool emphasized;
 
   const HeaderStatChip({
-    required this.icon,
+    required this.iconAssetName,
     required this.label,
     required this.value,
     this.emphasized = false,
@@ -169,21 +105,74 @@ class HeaderStatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final baseForeground =
+        emphasized ? colorScheme.onPrimaryContainer : colorScheme.onSurface;
+    final chipBackground = emphasized
+        ? colorScheme.primaryContainer
+        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.72);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: emphasized
-            ? colorScheme.primaryContainer
-            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        color: chipBackground,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: baseForeground.withValues(alpha: 0.08),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: baseForeground.withValues(alpha: emphasized ? 0.16 : 0.11),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: AppSvgIcon(
+                assetName: iconAssetName,
+                size: 14,
+                color: baseForeground,
+              ),
+            ),
+          ),
           const SizedBox(width: 8),
-          Text('$label: ', style: Theme.of(context).textTheme.labelLarge),
-          Text(value, style: Theme.of(context).textTheme.titleSmall),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value,
+                style: textTheme.labelLarge?.copyWith(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: baseForeground,
+                  letterSpacing: -0.1,
+                  height: 1.0,
+                ),
+              ),
+              Text(
+                label.toUpperCase(),
+                style: textTheme.labelSmall?.copyWith(
+                  fontSize: 10,
+                  color: baseForeground.withValues(alpha: 0.72),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.7,
+                  height: 1.1,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

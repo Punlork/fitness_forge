@@ -30,7 +30,7 @@ class HomeReady extends HomeState {
   final List<BodyMetricModel> bodyMetricsHistory;
   final List<WorkoutHistoryEntryModel> sessionHistory;
   final String? sessionSummaryMessage;
-  final int restSecondsRemaining;
+  final int currentRound;
 
   const HomeReady({
     required this.session,
@@ -42,13 +42,19 @@ class HomeReady extends HomeState {
     required this.bodyMetricsHistory,
     required this.sessionHistory,
     this.sessionSummaryMessage,
-    this.restSecondsRemaining = 0,
+    this.currentRound = 0,
   });
 
-  double get totalStrengthVolume =>
-      strengthSets.fold<double>(0, (sum, set) => sum + set.volume);
-  int get cardioSeconds =>
-      intervals.fold<int>(0, (sum, interval) => sum + interval.durationSeconds);
+  double get totalStrengthVolume => strengthSets.fold<double>(
+        0,
+        (sum, set) => sum + set.volume,
+      );
+
+  int get cardioSeconds => intervals.fold<int>(
+        0,
+        (sum, interval) => sum + interval.durationSeconds,
+      );
+
   bool get hasCardioLogged => cardioSeconds > 0;
   bool get hasStrengthLogged => strengthSets.isNotEmpty;
   double get currentWeekVolume => _sumStrengthInLastDays(progressPoints, 7);
@@ -60,7 +66,8 @@ class HomeReady extends HomeState {
   }
 
   int get weeklyCardioSessionsGoal {
-    final avg = (_countCardioSessionsInLastDays(progressPoints, 28) / 4).round();
+    final avg =
+        (_countCardioSessionsInLastDays(progressPoints, 28) / 4).round();
     return avg < 3 ? 3 : avg;
   }
 
@@ -86,6 +93,24 @@ class HomeReady extends HomeState {
     return score;
   }
 
+  int get computedRound {
+    final maxIntervalRound = intervals.isEmpty
+        ? 0
+        : intervals.map((i) => i.roundNumber).reduce(
+              (a, b) => a > b ? a : b,
+            );
+
+    final maxSetRound = strengthSets.isEmpty
+        ? 0
+        : strengthSets.map((s) => s.roundNumber).reduce(
+              (a, b) => a > b ? a : b,
+            );
+    final maxDbRound =
+        maxIntervalRound > maxSetRound ? maxIntervalRound : maxSetRound;
+
+    return currentRound > maxDbRound ? currentRound : maxDbRound;
+  }
+
   @override
   List<Object?> get props => [
         session,
@@ -97,7 +122,7 @@ class HomeReady extends HomeState {
         bodyMetricsHistory,
         sessionHistory,
         sessionSummaryMessage,
-        restSecondsRemaining,
+        currentRound,
       ];
 
   HomeReady copyWith({
@@ -111,7 +136,7 @@ class HomeReady extends HomeState {
     List<WorkoutHistoryEntryModel>? sessionHistory,
     String? sessionSummaryMessage,
     bool clearSessionSummaryMessage = false,
-    int? restSecondsRemaining,
+    int? currentRound,
   }) {
     return HomeReady(
       session: session ?? this.session,
@@ -125,7 +150,7 @@ class HomeReady extends HomeState {
       sessionSummaryMessage: clearSessionSummaryMessage
           ? null
           : (sessionSummaryMessage ?? this.sessionSummaryMessage),
-      restSecondsRemaining: restSecondsRemaining ?? this.restSecondsRemaining,
+      currentRound: currentRound ?? this.currentRound,
     );
   }
 
@@ -157,7 +182,9 @@ class HomeReady extends HomeState {
   ) {
     final threshold = DateTime.now().subtract(Duration(days: days - 1));
     return points
-        .where((point) => !point.date.isBefore(threshold) && point.cardioSeconds > 0)
+        .where(
+          (point) => !point.date.isBefore(threshold) && point.cardioSeconds > 0,
+        )
         .length;
   }
 }

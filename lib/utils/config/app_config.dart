@@ -1,6 +1,6 @@
-import 'package:flutter_base_template/utils/config/flavor_config.dart';
+import 'package:forge/utils/config/flavor_config.dart';
 import 'package:logger/logger.dart';
-import 'package:flutter_base_template/core/error/app_error.dart';
+import 'package:forge/core/error/app_error.dart';
 
 class AppConfig {
   static final AppConfig _instance = AppConfig._internal();

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_provider/theme_provider.dart';
 
-import 'light_theme.dart';
 import 'dark_theme.dart';
 import 'styles/base_color_styles.dart';
+import 'light_theme.dart';
 import 'styles/light_theme_colors.dart';
 import 'styles/dark_theme_colors.dart';
 
@@ -48,12 +48,13 @@ class BaseThemeConfig<T> {
   final T colors;
   final dynamic meta;
 
-  BaseThemeConfig(
-      {required this.id,
-      required this.description,
-      required this.theme,
-      required this.colors,
-      this.meta = const {}});
+  BaseThemeConfig({
+    required this.id,
+    required this.description,
+    required this.theme,
+    required this.colors,
+    this.meta = const {},
+  });
 
   AppTheme toAppTheme({ThemeData? defaultTheme}) => AppTheme(
         id: id,
@@ -68,25 +69,35 @@ T getColorStyle<T>(BuildContext context, {String? themeId}) {
   List<BaseThemeConfig<T>> listOfThemes = appThemes as List<BaseThemeConfig<T>>;
 
   if (themeId == null) {
-    BaseThemeConfig<T> themeFound = listOfThemes.firstWhere((theme) {
-      final brightness = MediaQuery.of(context).platformBrightness;
-      if (brightness == Brightness.dark) {
-        return theme.id == 'darkthemeid';
-      }
-      return theme.id == ThemeProvider.controllerOf(context).currentThemeId;
-    }, orElse: () => listOfThemes.first);
+    BaseThemeConfig<T> themeFound = listOfThemes.firstWhere(
+      (theme) {
+        final brightness = MediaQuery.of(context).platformBrightness;
+        if (brightness == Brightness.dark) {
+          return theme.id == 'darkthemeid';
+        }
+        return theme.id == ThemeProvider.controllerOf(context).currentThemeId;
+      },
+      orElse: () => listOfThemes.first,
+    );
     return themeFound.colors;
   }
 
   BaseThemeConfig<T> baseThemeConfig = listOfThemes.firstWhere(
-      (theme) => theme.id == themeId,
-      orElse: () => listOfThemes.first);
+    (theme) => theme.id == themeId,
+    orElse: () => listOfThemes.first,
+  );
   return baseThemeConfig.colors;
 }
 
 class ThemeColor {
-  static BaseColorStyles get(BuildContext context, {String? themeId}) =>
-      getColorStyle<BaseColorStyles>(context, themeId: themeId);
+  static BaseColorStyles get(
+    BuildContext context, {
+    String? themeId,
+  }) =>
+      getColorStyle<BaseColorStyles>(
+        context,
+        themeId: themeId,
+      );
 
   static Color fromHex(String hexColor) => getHexColor(hexColor);
 }
