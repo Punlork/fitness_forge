@@ -36,13 +36,6 @@ class WorkoutTimerNotificationService {
 
   bool _initialized = false;
 
-  bool get shouldShowRequest {
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-
-    return androidPlugin != null;
-  }
-
   Future<void> _ensureInitialized() async {
     if (_initialized) {
       return;
@@ -58,13 +51,12 @@ class WorkoutTimerNotificationService {
     tz.initializeTimeZones();
 
     const InitializationSettings settings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      android: AndroidInitializationSettings('@mipmap/launcher_icon'),
       iOS: DarwinInitializationSettings(),
     );
 
     await _plugin.initialize(settings);
     await _createAndroidChannel();
-    await requestPermissions();
     _initialized = true;
   }
 
@@ -93,7 +85,7 @@ class WorkoutTimerNotificationService {
     if (!_initialized) {
       tz.initializeTimeZones();
       const InitializationSettings settings = InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        android: AndroidInitializationSettings('@mipmap/launcher_icon'),
         iOS: DarwinInitializationSettings(),
       );
       await _plugin.initialize(settings);
@@ -102,16 +94,32 @@ class WorkoutTimerNotificationService {
     }
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.requestNotificationsPermission();
-    await androidPlugin?.requestExactAlarmsPermission();
+    if (androidPlugin != null) {
+      try {
+        await androidPlugin.requestNotificationsPermission();
+      } on PlatformException {
+        // Best-effort only; don't fail timer features.
+      }
+      try {
+        await androidPlugin.requestExactAlarmsPermission();
+      } on PlatformException {
+        // Not supported or blocked on some devices/OS versions.
+      }
+    }
 
     final iosPlugin = _plugin.resolvePlatformSpecificImplementation<
         IOSFlutterLocalNotificationsPlugin>();
-    await iosPlugin?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    if (iosPlugin != null) {
+      try {
+        await iosPlugin.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+      } on PlatformException {
+        // Best-effort only; don't fail timer features.
+      }
+    }
   }
 
   Future<void> scheduleCompletionAlert({
@@ -168,13 +176,6 @@ class WorkoutTimerNotificationService {
   Future<void> cancelTimerAlert() async {
     await _ensureInitialized();
     await _plugin.cancel(timerNotificationId);
-  }
-
-  Future<void> showDebugTestAlert() async {
-    await showCompletionAlert(
-      title: 'Timer Alert Test',
-      body: 'If you can see/hear/vibrate this, local timer alerts work.',
-    );
   }
 
   NotificationDetails _alarmNotificationDetails() {

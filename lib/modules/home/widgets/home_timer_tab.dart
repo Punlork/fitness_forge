@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:forge/services/workout_timer_notification_service.dart';
 
 class HomeTimerTab extends StatelessWidget {
   final int workSeconds;
@@ -16,8 +15,6 @@ class HomeTimerTab extends StatelessWidget {
   final VoidCallback onToggleStartPause;
   final VoidCallback onReset;
   final VoidCallback onSkipPhase;
-  final VoidCallback onRequestNotificationPermissions;
-  final VoidCallback onDebugTestAlert;
 
   const HomeTimerTab({
     required this.workSeconds,
@@ -34,8 +31,6 @@ class HomeTimerTab extends StatelessWidget {
     required this.onToggleStartPause,
     required this.onReset,
     required this.onSkipPhase,
-    required this.onRequestNotificationPermissions,
-    required this.onDebugTestAlert,
     super.key,
   });
 
@@ -201,28 +196,6 @@ class HomeTimerTab extends StatelessWidget {
                           label: const Text('Reset timer'),
                         ),
                       ),
-                      if (WorkoutTimerNotificationService
-                          .instance.shouldShowRequest) ...[
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: onRequestNotificationPermissions,
-                            icon:
-                                const Icon(Icons.notifications_active_outlined),
-                            label: const Text('Enable timer alerts'),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: onDebugTestAlert,
-                            icon: const Icon(Icons.bug_report_outlined),
-                            label: const Text('Test alert now'),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
