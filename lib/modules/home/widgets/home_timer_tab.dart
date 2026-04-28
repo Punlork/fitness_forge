@@ -1,8 +1,8 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
-import 'package:forge/modules/home/bloc/home_bloc.dart';
 
 class HomeTimerTab extends StatelessWidget {
-  final HomeReady state;
   final int workSeconds;
   final int restSeconds;
   final int targetRounds;
@@ -10,6 +10,7 @@ class HomeTimerTab extends StatelessWidget {
   final int remainingSeconds;
   final bool isWorkPhase;
   final bool isRunning;
+  final bool isPhaseCompleteAwaitingNext;
   final ValueChanged<int> onWorkSecondsChanged;
   final ValueChanged<int> onRestSecondsChanged;
   final ValueChanged<int> onTargetRoundsChanged;
@@ -18,7 +19,6 @@ class HomeTimerTab extends StatelessWidget {
   final VoidCallback onSkipPhase;
 
   const HomeTimerTab({
-    required this.state,
     required this.workSeconds,
     required this.restSeconds,
     required this.targetRounds,
@@ -26,6 +26,7 @@ class HomeTimerTab extends StatelessWidget {
     required this.remainingSeconds,
     required this.isWorkPhase,
     required this.isRunning,
+    required this.isPhaseCompleteAwaitingNext,
     required this.onWorkSecondsChanged,
     required this.onRestSecondsChanged,
     required this.onTargetRoundsChanged,
@@ -35,12 +36,30 @@ class HomeTimerTab extends StatelessWidget {
     super.key,
   });
 
+  String _formatTimer(int totalSeconds) {
+    final int safeSeconds = totalSeconds.clamp(0, 5999);
+    final int minutes = safeSeconds ~/ 60;
+    final int seconds = safeSeconds % 60;
+    final String minuteText = minutes.toString().padLeft(2, '0');
+    final String secondText = seconds.toString().padLeft(2, '0');
+    return '$minuteText:$secondText';
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final double progress = isWorkPhase
         ? 1 - (remainingSeconds / workSeconds.clamp(1, 999))
         : 1 - (remainingSeconds / restSeconds.clamp(1, 999));
+    final bool isWaitingManualAction = isPhaseCompleteAwaitingNext;
+    final bool isWorkoutComplete = !isRunning &&
+        !isWaitingManualAction &&
+        isWorkPhase &&
+        round >= targetRounds;
+    final String displayTime = _formatTimer(remainingSeconds);
+    final Color phaseColor =
+        isWorkPhase ? colorScheme.primary : colorScheme.tertiary;
 
     return CustomScrollView(
       physics: const ClampingScrollPhysics(),
@@ -52,66 +71,98 @@ class HomeTimerTab extends StatelessWidget {
               Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28)),
+                  borderRadius: BorderRadius.circular(28),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
                       Container(
-                        width: 120,
-                        height: 120,
+                        width: double.infinity,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(22),
                           gradient: LinearGradient(
                             colors: [
-                              colorScheme.primary.withValues(alpha: 0.22),
+                              phaseColor.withValues(alpha: 0.18),
                               colorScheme.surfaceContainerHighest,
                             ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                          border: Border.all(
+                            color: phaseColor.withValues(alpha: 0.35),
                           ),
                         ),
-                        child: Stack(
-                          alignment: Alignment.center,
+                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                        child: Column(
                           children: [
-                            SizedBox(
-                              width: 120,
-                              height: 120,
-                              child: CircularProgressIndicator(
-                                value: progress.clamp(0, 1),
-                                strokeWidth: 8,
-                                backgroundColor:
-                                    colorScheme.primary.withValues(alpha: 0.12),
-                              ),
-                            ),
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
+                            Row(
                               children: [
-                                Text(
-                                  '$remainingSeconds',
-                                  style:
-                                      Theme.of(context).textTheme.displaySmall,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: phaseColor.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    isWorkPhase ? 'WORK' : 'REST',
+                                    style: textTheme.labelLarge?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: phaseColor,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
                                 ),
+                                const Spacer(),
                                 Text(
-                                  isWorkPhase ? 'WORK' : 'REST',
-                                  style: Theme.of(context).textTheme.labelLarge,
+                                  'Round $round/$targetRounds',
+                                  style: textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ],
+                            ),
+                            const SizedBox(height: 16),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                displayTime,
+                                style: textTheme.displayLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 2.5,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(99),
+                              child: LinearProgressIndicator(
+                                minHeight: 10,
+                                value: progress.clamp(0, 1),
+                                backgroundColor: colorScheme.surface,
+                                color: phaseColor,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 18),
                       Text(
-                        'Round $round of $targetRounds',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        isWorkPhase
-                            ? 'Push through this work phase.'
-                            : 'Recover, breathe, then go again.',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        isWorkoutComplete
+                            ? 'Workout complete. Reset when you are ready.'
+                            : isWaitingManualAction
+                                ? 'Phase switched. Tap Start when ready.'
+                                : isWorkPhase
+                                    ? 'Push through this work phase.'
+                                    : 'Recover, breathe, then go again.',
+                        style: textTheme.titleMedium,
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 20),
                       Row(
@@ -122,7 +173,7 @@ class HomeTimerTab extends StatelessWidget {
                               icon: Icon(
                                 isRunning
                                     ? Icons.pause_circle_outline
-                                    : Icons.play_arrow,
+                                    : Icons.play_circle_outline,
                               ),
                               label: Text(isRunning ? 'Pause' : 'Start'),
                             ),
@@ -130,9 +181,9 @@ class HomeTimerTab extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: onSkipPhase,
+                              onPressed: isWorkoutComplete ? null : onSkipPhase,
                               icon: const Icon(Icons.skip_next),
-                              label: const Text('Next'),
+                              label: const Text('Skip'),
                             ),
                           ),
                         ],
@@ -163,12 +214,26 @@ class HomeTimerTab extends StatelessWidget {
                     children: [
                       Text(
                         'Interval setup',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Tune the timer before you start. Work phases are auto-logged.',
+                        'Choose presets or customize each interval manually.',
                         style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      _PresetSecondsSection(
+                        title: 'Work presets',
+                        selectedValue: workSeconds,
+                        presetValues: const [30, 45, 60, 90],
+                        onSelected: onWorkSecondsChanged,
+                      ),
+                      const SizedBox(height: 12),
+                      _PresetSecondsSection(
+                        title: 'Rest presets',
+                        selectedValue: restSeconds,
+                        presetValues: const [15, 30, 45, 60],
+                        onSelected: onRestSecondsChanged,
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -207,8 +272,6 @@ class HomeTimerTab extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              _LatestIntervalsCard(state: state),
             ],
           ),
         ),
@@ -245,7 +308,7 @@ class _StepperTile extends StatelessWidget {
             .withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(18),
       ),
-      padding: EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         children: [
           Padding(
@@ -274,7 +337,6 @@ class _StepperTile extends StatelessWidget {
                   Icons.remove,
                 ),
               ),
-              // const SizedBox(width: 6),
               IconButton.filledTonal(
                 onPressed: () => onChanged(value + step),
                 icon: const Icon(
@@ -290,65 +352,48 @@ class _StepperTile extends StatelessWidget {
   }
 }
 
-class _LatestIntervalsCard extends StatelessWidget {
-  final HomeReady state;
+class _PresetSecondsSection extends StatelessWidget {
+  final String title;
+  final int selectedValue;
+  final List<int> presetValues;
+  final ValueChanged<int> onSelected;
 
-  const _LatestIntervalsCard({required this.state});
+  const _PresetSecondsSection({
+    required this.title,
+    required this.selectedValue,
+    required this.presetValues,
+    required this.onSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            Text(
-              'Recent intervals',
-              style: Theme.of(context).textTheme.titleMedium,
+            ...presetValues.map(
+              (preset) => ChoiceChip(
+                label: Text('${preset}s'),
+                selected: selectedValue == preset,
+                onSelected: (_) => onSelected(preset),
+              ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Your most recent cardio work logged from the timer.',
-              style: Theme.of(context).textTheme.bodyMedium,
+            ChoiceChip(
+              label: const Text('Custom'),
+              selected: !presetValues.contains(selectedValue),
+              onSelected: (_) {},
             ),
-            const SizedBox(height: 14),
-            if (state.intervals.isEmpty)
-              const Text('No intervals logged yet.')
-            else
-              ...state.intervals.reversed.take(6).map(
-                    (interval) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest
-                              .withValues(alpha: 0.35),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.bolt_outlined),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                '#${interval.intervalOrder} ${interval.intervalType.toUpperCase()}',
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                            ),
-                            Text('${interval.durationSeconds}s'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
           ],
         ),
-      ),
+      ],
     );
   }
 }

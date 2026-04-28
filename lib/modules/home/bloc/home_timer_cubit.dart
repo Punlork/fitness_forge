@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forge/services/workout_timer_notification_service.dart';
+import 'package:haptic_feedback/haptic_feedback.dart';
 
 class HomeTimerState {
   final int workSeconds;
@@ -12,6 +14,7 @@ class HomeTimerState {
   final int remainingSeconds;
   final bool isWorkPhase;
   final bool isRunning;
+  final bool isPhaseCompleteAwaitingNext;
 
   const HomeTimerState({
     this.workSeconds = 40,
@@ -21,6 +24,7 @@ class HomeTimerState {
     this.remainingSeconds = 40,
     this.isWorkPhase = true,
     this.isRunning = false,
+    this.isPhaseCompleteAwaitingNext = false,
   });
 
   HomeTimerState copyWith({
@@ -31,6 +35,7 @@ class HomeTimerState {
     int? remainingSeconds,
     bool? isWorkPhase,
     bool? isRunning,
+    bool? isPhaseCompleteAwaitingNext,
   }) {
     return HomeTimerState(
       workSeconds: workSeconds ?? this.workSeconds,
@@ -40,6 +45,8 @@ class HomeTimerState {
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
       isWorkPhase: isWorkPhase ?? this.isWorkPhase,
       isRunning: isRunning ?? this.isRunning,
+      isPhaseCompleteAwaitingNext:
+          isPhaseCompleteAwaitingNext ?? this.isPhaseCompleteAwaitingNext,
     );
   }
 }
@@ -115,10 +122,17 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
     );
 
     _intervalTimer?.cancel();
-    emit(state.copyWith(isRunning: true));
-    _intervalTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-      _onTimerTick();
-    });
+    emit(
+      state.copyWith(
+        isRunning: true,
+      ),
+    );
+    _intervalTimer = Timer.periodic(
+      const Duration(milliseconds: 500),
+      (_) {
+        _onTimerTick();
+      },
+    );
     _scheduleBackgroundCompletionAlert();
   }
 
@@ -138,12 +152,13 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
 
   void resetTimer() {
     _intervalTimer?.cancel();
+    final current = state;
     emit(
-      state.copyWith(
+      current.copyWith(
         isRunning: false,
-        isWorkPhase: true,
-        round: 1,
-        remainingSeconds: state.workSeconds,
+        isPhaseCompleteAwaitingNext: false,
+        remainingSeconds:
+            current.isWorkPhase ? current.workSeconds : current.restSeconds,
       ),
     );
     _phaseEndsAt = null;
@@ -151,27 +166,30 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
   }
 
   void skipPhase() {
-    _advancePhase(
+    _advanceToNextPhase(
       shouldAlert: false,
-      logWorkCompletion: false,
+      startImmediately: state.isRunning,
+      logCurrentWorkCompletion: false,
     );
   }
 
-  Future<void> onPhaseCompletedAlert() async {
-    final current = state;
-    final bool completedWorkPhase = !current.isWorkPhase;
-    if (current.round >= current.targetRounds && completedWorkPhase) {
+  Future<void> onPhaseCompletedAlert({
+    required bool completedWorkPhase,
+    required bool workoutComplete,
+    required bool nextPhaseIsWork,
+  }) async {
+    if (workoutComplete) {
       await WorkoutTimerNotificationService.instance.showCompletionAlert(
         title: 'Workout Complete',
-        body: 'All rounds done. Great work.',
+        body: 'All rounds done. Tap Reset to start a new session.',
       );
       return;
     }
 
-    final String nextPhase = current.isWorkPhase ? 'Work' : 'Rest';
+    final String nextPhase = nextPhaseIsWork ? 'Work' : 'Rest';
     await WorkoutTimerNotificationService.instance.showCompletionAlert(
       title: '${completedWorkPhase ? 'Work' : 'Rest'} Complete',
-      body: '$nextPhase phase has started.',
+      body: '$nextPhase is ready. Tap Start to continue.',
     );
   }
 
@@ -183,7 +201,9 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
 
     final int secondsLeft = _secondsUntil(endAt);
     if (secondsLeft <= 0) {
-      _advancePhase(shouldAlert: !_isAppInBackground);
+      _completeCurrentPhase(
+        shouldAlert: !_isAppInBackground,
+      );
       return;
     }
 
@@ -192,41 +212,127 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
     }
   }
 
-  void _advancePhase({
+  void _completeCurrentPhase({
     required bool shouldAlert,
-    bool logWorkCompletion = true,
   }) {
     final current = state;
-    final bool wasWorkPhase = current.isWorkPhase;
-    HomeTimerState nextState;
+    final bool completedWorkPhase = current.isWorkPhase;
+    final bool workoutComplete =
+        !current.isWorkPhase && current.round >= current.targetRounds;
 
+    _intervalTimer?.cancel();
+    _phaseEndsAt = null;
+    unawaited(WorkoutTimerNotificationService.instance.cancelTimerAlert());
+
+    if (completedWorkPhase) {
+      onWorkPhaseCompleted?.call(current.workSeconds);
+    }
+
+    unawaited(_triggerCompletionHaptic());
+
+    if (workoutComplete) {
+      emit(
+        current.copyWith(
+          isRunning: false,
+          isWorkPhase: true,
+          remainingSeconds: current.workSeconds,
+          isPhaseCompleteAwaitingNext: false,
+        ),
+      );
+      if (shouldAlert) {
+        unawaited(
+          onPhaseCompletedAlert(
+            completedWorkPhase: completedWorkPhase,
+            workoutComplete: true,
+            nextPhaseIsWork: true,
+          ),
+        );
+      }
+      return;
+    }
+
+    final HomeTimerState nextState;
     if (current.isWorkPhase) {
       nextState = current.copyWith(
         isWorkPhase: false,
         remainingSeconds: current.restSeconds,
-      );
-    } else if (current.round >= current.targetRounds) {
-      _intervalTimer?.cancel();
-      nextState = current.copyWith(
         isRunning: false,
-        isWorkPhase: true,
-        remainingSeconds: current.workSeconds,
+        isPhaseCompleteAwaitingNext: true,
       );
     } else {
       nextState = current.copyWith(
         round: current.round + 1,
         isWorkPhase: true,
         remainingSeconds: current.workSeconds,
+        isRunning: false,
+        isPhaseCompleteAwaitingNext: true,
       );
     }
 
     emit(nextState);
 
-    if (wasWorkPhase && logWorkCompletion) {
+    if (!shouldAlert) {
+      return;
+    }
+
+    unawaited(
+      onPhaseCompletedAlert(
+        completedWorkPhase: completedWorkPhase,
+        workoutComplete: false,
+        nextPhaseIsWork: nextState.isWorkPhase,
+      ),
+    );
+  }
+
+  void _advanceToNextPhase({
+    required bool shouldAlert,
+    required bool startImmediately,
+    bool logCurrentWorkCompletion = false,
+  }) {
+    final current = state;
+    final bool completedWorkPhase = current.isWorkPhase;
+    final bool workoutComplete =
+        !current.isWorkPhase && current.round >= current.targetRounds;
+
+    if (logCurrentWorkCompletion && completedWorkPhase) {
       onWorkPhaseCompleted?.call(current.workSeconds);
     }
 
-    if (nextState.isRunning) {
+    if (workoutComplete) {
+      emit(
+        current.copyWith(
+          isRunning: false,
+          isWorkPhase: true,
+          remainingSeconds: current.workSeconds,
+          isPhaseCompleteAwaitingNext: false,
+        ),
+      );
+      _phaseEndsAt = null;
+      unawaited(WorkoutTimerNotificationService.instance.cancelTimerAlert());
+      return;
+    }
+
+    final HomeTimerState nextState;
+    if (current.isWorkPhase) {
+      nextState = current.copyWith(
+        isWorkPhase: false,
+        remainingSeconds: current.restSeconds,
+        isRunning: startImmediately,
+        isPhaseCompleteAwaitingNext: false,
+      );
+    } else {
+      nextState = current.copyWith(
+        round: current.round + 1,
+        isWorkPhase: true,
+        remainingSeconds: current.workSeconds,
+        isRunning: startImmediately,
+        isPhaseCompleteAwaitingNext: false,
+      );
+    }
+
+    emit(nextState);
+
+    if (startImmediately) {
       _phaseEndsAt = DateTime.now().add(
         Duration(seconds: nextState.remainingSeconds),
       );
@@ -236,9 +342,17 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
       unawaited(WorkoutTimerNotificationService.instance.cancelTimerAlert());
     }
 
-    if (shouldAlert) {
-      unawaited(onPhaseCompletedAlert());
+    if (!shouldAlert) {
+      return;
     }
+
+    unawaited(
+      onPhaseCompletedAlert(
+        completedWorkPhase: completedWorkPhase,
+        workoutComplete: false,
+        nextPhaseIsWork: nextState.isWorkPhase,
+      ),
+    );
   }
 
   Future<void> _scheduleBackgroundCompletionAlert() async {
@@ -263,19 +377,18 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
       return;
     }
 
-    int safetyCounter = 0;
-    while (_phaseEndsAt != null &&
-        _secondsUntil(_phaseEndsAt!) <= 0 &&
-        state.isRunning &&
-        safetyCounter < 20) {
-      _advancePhase(shouldAlert: false);
-      safetyCounter += 1;
+    final endAt = _phaseEndsAt;
+    if (endAt == null) {
+      return;
     }
 
-    final endAt = _phaseEndsAt;
-    if (endAt != null) {
-      emit(state.copyWith(remainingSeconds: _secondsUntil(endAt)));
+    final int secondsLeft = _secondsUntil(endAt);
+    if (secondsLeft <= 0) {
+      _completeCurrentPhase(shouldAlert: true);
+      return;
     }
+
+    emit(state.copyWith(remainingSeconds: secondsLeft));
   }
 
   int _secondsUntil(DateTime endAt) {
@@ -291,5 +404,34 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
     _intervalTimer?.cancel();
     await WorkoutTimerNotificationService.instance.cancelTimerAlert();
     return super.close();
+  }
+
+  Future<void> _triggerCompletionHaptic() async {
+    const pulseCount = 7;
+    const pulseSpacing = Duration(milliseconds: 700);
+
+    try {
+      if (await Haptics.canVibrate()) {
+        for (var i = 0; i < pulseCount; i++) {
+          await Haptics.vibrate(
+            HapticsType.heavy,
+            usage: HapticsUsage.notification,
+          );
+          if (i < pulseCount - 1) {
+            await Future<void>.delayed(pulseSpacing);
+          }
+        }
+        return;
+      }
+    } on PlatformException {
+      // Fall back to default haptic.
+    }
+
+    for (var i = 0; i < pulseCount; i++) {
+      await HapticFeedback.vibrate();
+      if (i < pulseCount - 1) {
+        await Future<void>.delayed(pulseSpacing);
+      }
+    }
   }
 }

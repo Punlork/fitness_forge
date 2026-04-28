@@ -43,8 +43,6 @@ class HomeDashboardTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           sliver: SliverList.list(
             children: [
-              // _SessionStatusCard(state: state),
-              const SizedBox(height: 16),
               _ProtocolCard(plan: plan),
               const SizedBox(height: 16),
               RoundLogSection(state: state),
@@ -157,41 +155,6 @@ class _RestDayView extends StatelessWidget {
   }
 }
 
-class _SessionStatusCard extends StatelessWidget {
-  final HomeReady state;
-
-  const _SessionStatusCard({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final plan = state.todayPlan;
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppHeaderText(
-              '${plan.dayLabel} \u2022 ${plan.focus}',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${plan.cardioSeconds}s ${plan.cardioMode.name} rope \u2192 ${plan.hasTransition ? '${plan.transitionSeconds}s transition \u2192 ' : ''}${plan.workSeconds}s ${plan.workDescription}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.72),
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _ProtocolCard extends StatefulWidget {
   final WorkoutDayPlanModel plan;
 
@@ -204,138 +167,165 @@ class _ProtocolCard extends StatefulWidget {
 class _ProtocolCardState extends State<_ProtocolCard> {
   bool _expanded = true;
 
+  Widget _buildExerciseItem(BuildContext context, ExercisePlan ex) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                ex.name,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              if (ex.repsTarget != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    ex.repsTarget!,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSecondaryContainer,
+                        ),
+                  ),
+                ),
+              ],
+              if (ex.durationTarget != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    ex.durationTarget!,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onTertiaryContainer,
+                        ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            ex.howTo,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Avoid: ${ex.mistake}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.error.withValues(alpha: 0.8),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final plan = widget.plan;
+    final primaryExercises = plan.primaryPoolExercises;
+    final supportExercises = plan.supportPoolExercises;
+    final fallbackExercises = plan.exercises;
+    final hasPools = primaryExercises.isNotEmpty || supportExercises.isNotEmpty;
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       margin: EdgeInsets.zero,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const AppHeaderText('Protocol'),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(
+      child: InkWell(
+        onTap: () => setState(() => _expanded = !_expanded),
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const AppHeaderText('Protocol'),
+                  const Spacer(),
+                  Icon(
                     _expanded ? Icons.expand_less : Icons.expand_more,
                   ),
-                  onPressed: () => setState(() => _expanded = !_expanded),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _ProtocolRow(
+                iconAssetName: AppAssets.cardioIcon,
+                label: 'Cardio',
+                time: '${plan.cardioSeconds}s',
+                detail: plan.cardioDescription,
+              ),
+              if (plan.hasTransition) ...[
+                const SizedBox(height: 10),
+                _ProtocolRow(
+                  iconAssetName: AppAssets.transitionIcon,
+                  label: 'Transition',
+                  time: '${plan.transitionSeconds}s',
+                  detail: plan.transitionDescription,
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            _ProtocolRow(
-              iconAssetName: AppAssets.cardioIcon,
-              label: 'Cardio',
-              time: '${plan.cardioSeconds}s',
-              detail: plan.cardioDescription,
-            ),
-            if (plan.hasTransition) ...[
               const SizedBox(height: 10),
               _ProtocolRow(
-                iconAssetName: AppAssets.transitionIcon,
-                label: 'Transition',
-                time: '${plan.transitionSeconds}s',
-                detail: plan.transitionDescription,
+                iconAssetName: AppAssets.workIcon,
+                label: 'Work',
+                time: '${plan.workSeconds}s',
+                detail: plan.workDescription,
               ),
-            ],
-            const SizedBox(height: 10),
-            _ProtocolRow(
-              iconAssetName: AppAssets.workIcon,
-              label: 'Work',
-              time: '${plan.workSeconds}s',
-              detail: plan.workDescription,
-            ),
-            if (_expanded) ...[
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
-              ...plan.exercises.map(
-                (ex) => Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            ex.name,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          if (ex.repsTarget != null) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.secondaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                ex.repsTarget!,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: colorScheme.onSecondaryContainer,
-                                    ),
-                              ),
-                            ),
-                          ],
-                          if (ex.durationTarget != null) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.tertiaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                ex.durationTarget!,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: colorScheme.onTertiaryContainer,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        ex.howTo,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Avoid: ${ex.commonMistake}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.error.withValues(alpha: 0.8),
-                            ),
-                      ),
-                    ],
+              if (_expanded) ...[
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+                if (hasPools) ...[
+                  if (primaryExercises.isNotEmpty) ...[
+                    Text(
+                      'Primary Pool',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    ...primaryExercises.map(
+                      (ex) => _buildExerciseItem(context, ex),
+                    ),
+                  ],
+                  if (supportExercises.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Support Pool',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    ...supportExercises.map(
+                      (ex) => _buildExerciseItem(context, ex),
+                    ),
+                  ],
+                ] else ...[
+                  ...fallbackExercises.map(
+                    (ex) => _buildExerciseItem(context, ex),
                   ),
-                ),
-              ),
+                ],
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -579,14 +569,27 @@ class _CollapsibleSessionNotesState extends State<_CollapsibleSessionNotes> {
               ),
               if (_expanded) ...[
                 const SizedBox(height: 12),
-                TextField(
-                  controller: widget.sessionNoteController,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    hintText: 'How did it feel?',
-                  ),
-                  onChanged: (_) => widget.onSaveSessionNote(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: widget.sessionNoteController,
+                      minLines: 2,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        hintText: 'How did it feel?',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.tonalIcon(
+                        onPressed: widget.onSaveSessionNote,
+                        icon: const Icon(Icons.save_outlined),
+                        label: const Text('Save'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ],

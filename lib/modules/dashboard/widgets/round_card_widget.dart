@@ -10,7 +10,7 @@ import 'package:forge/modules/home/bloc/home_bloc.dart';
 import 'rep_log_form_widget.dart';
 import 'time_log_form_widget.dart';
 
-class RoundCard extends StatelessWidget {
+class RoundCard extends StatefulWidget {
   final RoundData round;
   final HomeReady state;
 
@@ -21,15 +21,34 @@ class RoundCard extends StatelessWidget {
   });
 
   @override
+  State<RoundCard> createState() => _RoundCardState();
+}
+
+class _RoundCardState extends State<RoundCard> {
+  bool _useSupportPool = false;
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final plan = state.todayPlan;
+    final plan = widget.state.todayPlan;
+    final selectedExercises =
+        _useSupportPool && plan.supportPoolExercises.isNotEmpty
+            ? plan.supportPoolExercises
+            : (plan.primaryPoolExercises.isNotEmpty
+                ? plan.primaryPoolExercises
+                : plan.exercises);
 
-    final hasAnyExerciseLog = plan.exercises.any(
-      (ex) => round.workLogs.any((log) => log.exerciseName == ex.name),
+    final allExercises = <ExercisePlan>{
+      ...plan.primaryPoolExercises,
+      ...plan.supportPoolExercises,
+      ...plan.exercises,
+    }.toList(growable: false);
+
+    final hasAnyExerciseLog = allExercises.any(
+      (ex) => widget.round.workLogs.any((log) => log.exerciseName == ex.name),
     );
 
-    final isRoundComplete = round.hasCardio && hasAnyExerciseLog;
+    final isRoundComplete = widget.round.hasCardio && hasAnyExerciseLog;
 
     return Card(
       elevation: 0,
@@ -41,24 +60,33 @@ class RoundCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _RoundCardHeader(
-              round: round,
+              round: widget.round,
               isRoundComplete: isRoundComplete,
               colorScheme: colorScheme,
             ),
             const SizedBox(height: 6),
+            if (plan.supportPoolExercises.isNotEmpty) ...[
+              _PoolSelector(
+                useSupportPool: _useSupportPool,
+                onChanged: (useSupportPool) {
+                  setState(() => _useSupportPool = useSupportPool);
+                },
+              ),
+              const SizedBox(height: 6),
+            ],
             Row(
               children: [
                 Expanded(
                   child: _RoundCheckTile(
                     iconAssetName: AppAssets.cardioIcon,
                     label: 'Cardio',
-                    checked: round.hasCardio,
-                    onTap: round.hasCardio
+                    checked: widget.round.hasCardio,
+                    onTap: widget.round.hasCardio
                         ? null
                         : () {
                             context.read<HomeBloc>().add(
                                   LogCardioCheckEvent(
-                                    roundNumber: round.roundNumber,
+                                    roundNumber: widget.round.roundNumber,
                                   ),
                                 );
                           },
@@ -67,8 +95,8 @@ class RoundCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            ...plan.exercises.map((ex) {
-              final logs = round.workLogs
+            ...selectedExercises.map((ex) {
+              final logs = widget.round.workLogs
                   .where((s) => s.exerciseName == ex.name)
                   .toList();
 
@@ -77,13 +105,43 @@ class RoundCard extends StatelessWidget {
                 child: _ExerciseLogTile(
                   exercise: ex,
                   logs: logs,
-                  roundNumber: round.roundNumber,
+                  roundNumber: widget.round.roundNumber,
                 ),
               );
             }),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PoolSelector extends StatelessWidget {
+  final bool useSupportPool;
+  final ValueChanged<bool> onChanged;
+
+  const _PoolSelector({
+    required this.useSupportPool,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<bool>(
+      segments: const [
+        ButtonSegment(
+          value: false,
+          label: Text('Primary'),
+        ),
+        ButtonSegment(
+          value: true,
+          label: Text('Support'),
+        ),
+      ],
+      selected: <bool>{useSupportPool},
+      onSelectionChanged: (selection) {
+        onChanged(selection.first);
+      },
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:forge/models/strength_set_model.dart';
 import 'package:forge/models/workout_history_entry_model.dart';
 import 'package:forge/models/workout_plan_model.dart';
 import 'package:forge/models/workout_session_model.dart';
+import 'package:forge/repository/workout/local/local_workout_plan_repository.dart';
 import 'package:forge/repository/workout/local/local_workout_repository.dart';
 import 'package:logger/logger.dart';
 
@@ -17,9 +18,14 @@ part 'home_state.dart';
 class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
   final Logger _logger = Logger();
   final LocalWorkoutRepository _workoutRepository;
+  final LocalWorkoutPlanRepository _workoutPlanRepository;
 
-  HomeBloc({LocalWorkoutRepository? workoutRepository})
-      : _workoutRepository = workoutRepository ?? LocalWorkoutRepository(),
+  HomeBloc({
+    LocalWorkoutRepository? workoutRepository,
+    LocalWorkoutPlanRepository? workoutPlanRepository,
+  })  : _workoutRepository = workoutRepository ?? LocalWorkoutRepository(),
+        _workoutPlanRepository =
+            workoutPlanRepository ?? LocalWorkoutPlanRepository(),
         super(const HomeInitial());
 
   @override
@@ -57,6 +63,7 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
 
   Future<void> _initializeSession(Emitter<HomeState> emit) async {
     emit(const HomeLoading());
+    await _workoutPlanRepository.getWeekPlan();
     final existingSession = await _workoutRepository.getLatestSessionForToday();
     if (existingSession == null) {
       await _startNewSession(emit);
@@ -268,7 +275,7 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
     WorkoutSessionModel session,
     Emitter<HomeState> emit,
   ) async {
-    final todayPlan = WorkoutWeekPlan.todayWorkout;
+    final todayPlan = await _workoutPlanRepository.getTodayWorkout();
 
     final intervals = await _workoutRepository.getJumpRopeIntervals(
       session.id,

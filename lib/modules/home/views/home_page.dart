@@ -4,10 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:forge/models/workout_plan_model.dart';
 import 'package:forge/modules/home/bloc/home_bloc.dart';
 import 'package:forge/modules/home/bloc/home_timer_cubit.dart';
-import 'package:forge/modules/home/views/widgets/home_progress_tab.dart';
-import 'package:forge/modules/home/views/widgets/home_timer_tab.dart';
+import 'package:forge/modules/home/utils/home_backup_utils.dart';
+import 'package:forge/modules/home/widgets/home_progress_tab.dart';
+import 'package:forge/modules/home/widgets/home_timer_tab.dart';
 import 'package:forge/modules/dashboard/home_dashboard_tab.dart';
-import 'package:forge/modules/home/views/widgets/top_session_header.dart';
+import 'package:forge/modules/home/widgets/top_session_header.dart';
 import 'package:forge/utils/constants/app_assets.dart';
 import 'package:forge/utils/widgets/app_header_text.dart';
 import 'package:forge/utils/widgets/app_svg_icon.dart';
@@ -32,6 +33,7 @@ class _HomePageState extends State<HomePage>
   final _heightController = TextEditingController();
   final _bodyFatController = TextEditingController();
   final _sessionNoteController = TextEditingController();
+  String? _lastBackupDirectory;
 
   @override
   void initState() {
@@ -42,9 +44,13 @@ class _HomePageState extends State<HomePage>
     _homeBloc = HomeBloc()..add(const InitializeHomeEvent());
     _homeTimerCubit = HomeTimerCubit(
       onWorkPhaseCompleted: (seconds) {
+        final currentState = _homeBloc.state;
+        final intervalType = currentState is HomeReady
+            ? currentState.todayPlan.cardioMode.label
+            : CardioMode.steady.label;
         _homeBloc.add(
           AddJumpRopeIntervalEvent(
-            intervalType: WorkoutWeekPlan.todayWorkout.cardioMode.label,
+            intervalType: intervalType,
             durationSeconds: seconds,
           ),
         );
@@ -82,23 +88,21 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<HomeBloc>.value(
-          value: _homeBloc,
-        ),
-        BlocProvider<HomeTimerCubit>.value(
-          value: _homeTimerCubit,
-        ),
+        BlocProvider<HomeBloc>.value(value: _homeBloc),
+        BlocProvider<HomeTimerCubit>.value(value: _homeTimerCubit),
       ],
       child: Scaffold(
         body: SafeArea(
           top: false,
           child: BlocConsumer<HomeBloc, HomeState>(
             listener: (context, state) {
+              final isSessionSummary = state is HomeReady &&
+                  state.sessionSummaryMessage != null &&
+                  state.sessionSummaryMessage!.isNotEmpty;
+
               if (state is HomeError) {
                 _showSnackBar(state.message);
-              } else if (state is HomeReady &&
-                  state.sessionSummaryMessage != null &&
-                  state.sessionSummaryMessage!.isNotEmpty) {
+              } else if (isSessionSummary) {
                 showDialog<void>(
                   context: context,
                   builder: (_) => AlertDialog(
@@ -151,7 +155,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildScrollableBody(BuildContext context, HomeReady state) {
     final colorScheme = Theme.of(context).colorScheme;
-    final double statusBarHeight = MediaQuery.of(context).padding.top;
+    final statusBarHeight = MediaQuery.of(context).padding.top;
 
     final pinnedHeaderHeight = statusBarHeight + kToolbarHeight;
 
@@ -162,7 +166,7 @@ class _HomePageState extends State<HomePage>
       pinnedHeaderSliverHeightBuilder: () => pinnedHeaderHeight,
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverAppBar(
-          expandedHeight: 220,
+          expandedHeight: 230,
           elevation: 0,
           scrolledUnderElevation: 0,
           backgroundColor: colorScheme.surface,
@@ -173,7 +177,7 @@ class _HomePageState extends State<HomePage>
               return FlexibleSpaceBar(
                 titlePadding: const EdgeInsetsDirectional.only(
                   start: 20,
-                  bottom: 16,
+                  bottom: 18,
                 ),
                 title: _top == pinnedHeaderHeight
                     ? AppHeaderText(
@@ -242,6 +246,70 @@ class _HomePageState extends State<HomePage>
                 context.read<HomeBloc>().add(const StartNewSessionEvent());
               },
             ),
+            PopupMenuButton<_BackupMenuAction>(
+              tooltip: 'Backup options',
+              icon: const AppSvgIcon(
+                assetName: AppAssets.logIcon,
+              ),
+              onSelected: (value) {
+                switch (value) {
+                  case _BackupMenuAction.export:
+                    HomeBackupUtils.handleExportBackup(
+                      context: context,
+                      lastBackupDirectory: _lastBackupDirectory,
+                      showSnackBar: _showSnackBar,
+                    ).then(
+                      (value) {
+                        _lastBackupDirectory = value;
+                      },
+                    );
+                    return;
+                  case _BackupMenuAction.import:
+                    HomeBackupUtils.handleImportBackup(
+                      context: context,
+                      lastBackupDirectory: _lastBackupDirectory,
+                      showSnackBar: _showSnackBar,
+                      onImportApplied: () async {
+                        _homeTimerCubit.resetTimer();
+                        _homeBloc.add(const InitializeHomeEvent());
+                      },
+                    ).then((value) {
+                      _lastBackupDirectory = value;
+                    });
+                    return;
+                }
+              },
+              itemBuilder: (context) {
+                return const [
+                  PopupMenuItem(
+                    value: _BackupMenuAction.export,
+                    child: Row(
+                      children: [
+                        AppSvgIcon(
+                          assetName: AppAssets.logIcon,
+                          size: 18,
+                        ),
+                        SizedBox(width: 10),
+                        Text('Export backup'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: _BackupMenuAction.import,
+                    child: Row(
+                      children: [
+                        AppSvgIcon(
+                          assetName: AppAssets.historyIcon,
+                          size: 18,
+                        ),
+                        SizedBox(width: 10),
+                        Text('Import backup'),
+                      ],
+                    ),
+                  ),
+                ];
+              },
+            ),
             const SizedBox(width: 8),
           ],
         ),
@@ -251,61 +319,38 @@ class _HomePageState extends State<HomePage>
           TabBar(
             controller: _tabController,
             indicatorColor: Colors.transparent,
+            padding: EdgeInsets.zero,
+            dividerColor: Colors.transparent,
             isScrollable: false,
-            unselectedLabelColor: Colors.grey.shade700,
-            tabs: <Tab>[
+            splashFactory: NoSplash.splashFactory,
+            overlayColor: WidgetStateProperty.resolveWith<Color?>(
+              (Set<WidgetState> states) => states.contains(WidgetState.focused)
+                  ? null
+                  : Colors.transparent,
+            ),
+            tabs: [
               Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppSvgIcon(
-                      assetName: AppAssets.dashboardIcon,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    AppHeaderText(
-                      'Dashboard',
-                      level: AppHeaderLevel.subsection,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ],
+                child: _buildTabChip(
+                  context: context,
+                  index: 0,
+                  label: 'Dashboard',
+                  iconAsset: AppAssets.dashboardIcon,
                 ),
               ),
               Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppSvgIcon(
-                      assetName: AppAssets.timerIcon,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    AppHeaderText(
-                      'Timer',
-                      level: AppHeaderLevel.subsection,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ],
+                child: _buildTabChip(
+                  context: context,
+                  index: 1,
+                  label: 'Timer',
+                  iconAsset: AppAssets.timerIcon,
                 ),
               ),
               Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppSvgIcon(
-                      assetName: AppAssets.progressIcon,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    AppHeaderText(
-                      'Progress',
-                      level: AppHeaderLevel.subsection,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ],
+                child: _buildTabChip(
+                  context: context,
+                  index: 2,
+                  label: 'Progress',
+                  iconAsset: AppAssets.progressIcon,
                 ),
               ),
             ],
@@ -313,7 +358,6 @@ class _HomePageState extends State<HomePage>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(),
               children: [
                 ExtendedVisibilityDetector(
                   uniqueKey: const Key('DashboardTab'),
@@ -336,7 +380,6 @@ class _HomePageState extends State<HomePage>
                     builder: (context, timerState) {
                       final timerCubit = context.read<HomeTimerCubit>();
                       return HomeTimerTab(
-                        state: state,
                         workSeconds: timerState.workSeconds,
                         restSeconds: timerState.restSeconds,
                         targetRounds: timerState.targetRounds,
@@ -344,6 +387,8 @@ class _HomePageState extends State<HomePage>
                         remainingSeconds: timerState.remainingSeconds,
                         isWorkPhase: timerState.isWorkPhase,
                         isRunning: timerState.isRunning,
+                        isPhaseCompleteAwaitingNext:
+                            timerState.isPhaseCompleteAwaitingNext,
                         onWorkSecondsChanged: timerCubit.onWorkSecondsChanged,
                         onRestSecondsChanged: timerCubit.onRestSecondsChanged,
                         onTargetRoundsChanged: timerCubit.onTargetRoundsChanged,
@@ -421,4 +466,51 @@ class _HomePageState extends State<HomePage>
         SnackBar(content: Text(message)),
       );
   }
+
+  Widget _buildTabChip({
+    required BuildContext context,
+    required int index,
+    required String label,
+    required String iconAsset,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isSelected = _selectedTab == index;
+    final tabColor = isSelected ? colorScheme.primary : colorScheme.outline;
+
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primary.withValues(alpha: 0.14)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppSvgIcon(
+              assetName: iconAsset,
+              size: 18,
+              color: tabColor,
+            ),
+            const SizedBox(width: 6),
+            AppHeaderText(
+              label,
+              level: AppHeaderLevel.subsection,
+              color: tabColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _BackupMenuAction {
+  export,
+  import,
 }
