@@ -47,8 +47,6 @@ class HomeDashboardTab extends StatelessWidget {
               const SizedBox(height: 16),
               RoundLogSection(state: state),
               const SizedBox(height: 16),
-              _WeeklyGoalsCard(state: state),
-              const SizedBox(height: 16),
               _CollapsibleBodyMetrics(
                 state: state,
                 bodyWeightController: bodyWeightController,
@@ -648,101 +646,6 @@ class _SessionCompleteCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _WeeklyGoalsCard extends StatelessWidget {
-  final HomeReady state;
-
-  const _WeeklyGoalsCard({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    final volumeProgress = (state.weeklyVolumeGoal <= 0
-            ? 0
-            : state.currentWeekVolume / state.weeklyVolumeGoal)
-        .clamp(0, 1)
-        .toDouble();
-    final cardioProgress = (state.weeklyCardioSessionsGoal <= 0
-            ? 0
-            : state.currentWeekCardioSessions / state.weeklyCardioSessionsGoal)
-        .clamp(0, 1)
-        .toDouble();
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const AppHeaderText(
-              'This week\'s goals',
-            ),
-            const SizedBox(height: 12),
-            _GoalProgressRow(
-              title: 'Strength volume',
-              progress: volumeProgress,
-              subtitle:
-                  '${state.currentWeekVolume.toStringAsFixed(0)} / ${state.weeklyVolumeGoal.toStringAsFixed(0)} kg',
-            ),
-            const SizedBox(height: 12),
-            _GoalProgressRow(
-              title: 'Cardio sessions',
-              progress: cardioProgress,
-              subtitle:
-                  '${state.currentWeekCardioSessions} / ${state.weeklyCardioSessionsGoal} sessions',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GoalProgressRow extends StatelessWidget {
-  final String title;
-  final double progress;
-  final String subtitle;
-
-  const _GoalProgressRow({
-    required this.title,
-    required this.progress,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(title, style: Theme.of(context).textTheme.labelLarge),
-            const Spacer(),
-            Text(
-              '${(progress * 100).toStringAsFixed(0)}%',
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 8,
-            backgroundColor: Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest
-                .withValues(alpha: 0.6),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-      ],
     );
   }
 }

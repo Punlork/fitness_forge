@@ -17,7 +17,9 @@ class HomeProgressTab extends StatefulWidget {
 }
 
 class _HomeProgressTabState extends State<HomeProgressTab> {
+  static const _windowOptions = <int>[14, 30, 60];
   DateTime? _selectedHistoryDate;
+  int _selectedWindowDays = 14;
 
   @override
   void didUpdateWidget(covariant HomeProgressTab oldWidget) {
@@ -33,6 +35,22 @@ class _HomeProgressTabState extends State<HomeProgressTab> {
   Widget build(BuildContext context) {
     final points = widget.state.progressPoints;
     final history = widget.state.sessionHistory;
+    final cutoffDate = DateTime.now().subtract(
+      Duration(days: _selectedWindowDays - 1),
+    );
+    final windowPoints = points
+        .where((point) => !point.date.isBefore(cutoffDate))
+        .toList(growable: false);
+    final uniqueSessionDays = history
+        .where((entry) => !entry.sessionDate.isBefore(cutoffDate))
+        .map((entry) => DateTime(
+              entry.sessionDate.year,
+              entry.sessionDate.month,
+              entry.sessionDate.day,
+            ))
+        .toSet()
+        .length;
+
     _selectedHistoryDate ??=
         history.isNotEmpty ? history.first.sessionDate : null;
     final selectedEntries = _selectedHistoryDate == null
@@ -49,12 +67,22 @@ class _HomeProgressTabState extends State<HomeProgressTab> {
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           sliver: SliverList.list(children: [
+            _WindowSelector(
+              selectedWindowDays: _selectedWindowDays,
+              options: _windowOptions,
+              onSelected: (days) {
+                setState(() {
+                  _selectedWindowDays = days;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: _SummaryTile(
-                    title: '14 day volume',
-                    value: points
+                    title: '$_selectedWindowDays day volume',
+                    value: windowPoints
                         .fold<double>(
                             0, (sum, point) => sum + point.strengthVolume)
                         .toStringAsFixed(0),
@@ -64,46 +92,28 @@ class _HomeProgressTabState extends State<HomeProgressTab> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _SummaryTile(
-                    title: '14 day cardio',
+                    title: '$_selectedWindowDays day cardio',
                     value:
-                        '${points.fold<int>(0, (sum, point) => sum + point.cardioSeconds)}s',
+                        '${windowPoints.fold<int>(0, (sum, point) => sum + point.cardioSeconds)}s',
                     icon: Icons.timer_outlined,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
+            _SummaryTile(
+              title: 'Active days ($_selectedWindowDays d)',
+              value: '$uniqueSessionDays',
+              icon: Icons.calendar_month_outlined,
+            ),
+            const SizedBox(height: 16),
             _InsightCard(message: widget.state.primaryInsight),
-            const SizedBox(height: 16),
-            _GoalsCard(
-              currentWeekVolume: widget.state.currentWeekVolume,
-              weeklyVolumeGoal: widget.state.weeklyVolumeGoal,
-              currentWeekCardioSessions: widget.state.currentWeekCardioSessions,
-              weeklyCardioSessionsGoal: widget.state.weeklyCardioSessionsGoal,
-            ),
-            const SizedBox(height: 16),
-            _ChartCard(
-              title: 'Strength volume trend',
-              subtitle: 'See whether your output is climbing or flattening.',
-              points: points
-                  .asMap()
-                  .entries
-                  .map(
-                    (entry) => FlSpot(
-                      entry.key.toDouble(),
-                      entry.value.strengthVolume,
-                    ),
-                  )
-                  .toList(),
-              lineColor: Colors.orangeAccent,
-              emptyText: 'Log strength sets to unlock this chart.',
-            ),
             const SizedBox(height: 16),
             _ChartCard(
               title: 'Cardio trend',
               subtitle:
                   'Track how consistently you are putting in interval work.',
-              points: points
+              points: windowPoints
                   .asMap()
                   .entries
                   .map(
@@ -122,6 +132,8 @@ class _HomeProgressTabState extends State<HomeProgressTab> {
               subtitle:
                   'Monitor long-term body composition rather than daily emotion.',
               points: widget.state.bodyMetricsHistory
+                  .where((entry) => !entry.logDate.isBefore(cutoffDate))
+                  .toList(growable: false)
                   .asMap()
                   .entries
                   .map(
@@ -160,6 +172,36 @@ class _HomeProgressTabState extends State<HomeProgressTab> {
   }
 }
 
+class _WindowSelector extends StatelessWidget {
+  final int selectedWindowDays;
+  final List<int> options;
+  final ValueChanged<int> onSelected;
+
+  const _WindowSelector({
+    required this.selectedWindowDays,
+    required this.options,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<int>(
+      segments: options
+          .map(
+            (days) => ButtonSegment<int>(
+              value: days,
+              label: Text('${days}d'),
+            ),
+          )
+          .toList(growable: false),
+      selected: <int>{selectedWindowDays},
+      onSelectionChanged: (selected) {
+        onSelected(selected.first);
+      },
+    );
+  }
+}
+
 class _InsightCard extends StatelessWidget {
   final String message;
 
@@ -186,90 +228,6 @@ class _InsightCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _GoalsCard extends StatelessWidget {
-  final double currentWeekVolume;
-  final double weeklyVolumeGoal;
-  final int currentWeekCardioSessions;
-  final int weeklyCardioSessionsGoal;
-
-  const _GoalsCard({
-    required this.currentWeekVolume,
-    required this.weeklyVolumeGoal,
-    required this.currentWeekCardioSessions,
-    required this.weeklyCardioSessionsGoal,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final volumeProgress =
-        (weeklyVolumeGoal <= 0 ? 0 : currentWeekVolume / weeklyVolumeGoal)
-            .clamp(0, 1)
-            .toDouble();
-    final cardioProgress = (weeklyCardioSessionsGoal <= 0
-            ? 0
-            : currentWeekCardioSessions / weeklyCardioSessionsGoal)
-        .clamp(0, 1)
-        .toDouble();
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Auto weekly goals',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            _GoalProgressRow(
-              title: 'Strength volume',
-              progress: volumeProgress,
-              subtitle:
-                  '${currentWeekVolume.toStringAsFixed(0)} / ${weeklyVolumeGoal.toStringAsFixed(0)} kg',
-            ),
-            const SizedBox(height: 12),
-            _GoalProgressRow(
-              title: 'Cardio sessions',
-              progress: cardioProgress,
-              subtitle:
-                  '$currentWeekCardioSessions / $weeklyCardioSessionsGoal sessions',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GoalProgressRow extends StatelessWidget {
-  final String title;
-  final double progress;
-  final String subtitle;
-
-  const _GoalProgressRow({
-    required this.title,
-    required this.progress,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 4),
-        LinearProgressIndicator(value: progress),
-        const SizedBox(height: 4),
-        Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-      ],
     );
   }
 }
