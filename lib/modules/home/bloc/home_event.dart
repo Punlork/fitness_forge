@@ -32,12 +32,14 @@ class AddJumpRopeIntervalEvent extends HomeEvent {
 }
 
 class AddStrengthSetEvent extends HomeEvent {
+  final String exerciseId;
   final String exerciseName;
   final double weight;
   final StrengthLoadType loadType;
   final int reps;
 
   const AddStrengthSetEvent({
+    this.exerciseId = '',
     required this.exerciseName,
     required this.weight,
     required this.loadType,
@@ -45,7 +47,7 @@ class AddStrengthSetEvent extends HomeEvent {
   });
 
   @override
-  List<Object?> get props => [exerciseName, weight, loadType, reps];
+  List<Object?> get props => [exerciseId, exerciseName, weight, loadType, reps];
 }
 
 class CompleteSessionEvent extends HomeEvent {
@@ -103,33 +105,38 @@ class LogCardioCheckEvent extends HomeEvent {
 }
 
 class LogWorkSetEvent extends HomeEvent {
+  final String exerciseId;
   final String exerciseName;
   final int reps;
   final int roundNumber;
 
   const LogWorkSetEvent({
+    required this.exerciseId,
     required this.exerciseName,
     required this.reps,
     required this.roundNumber,
   });
 
   @override
-  List<Object?> get props => [exerciseName, reps, roundNumber];
+  List<Object?> get props => [exerciseId, exerciseName, reps, roundNumber];
 }
 
 class LogTimedWorkEvent extends HomeEvent {
+  final String exerciseId;
   final String exerciseName;
   final int durationSeconds;
   final int roundNumber;
 
   const LogTimedWorkEvent({
+    required this.exerciseId,
     required this.exerciseName,
     required this.durationSeconds,
     required this.roundNumber,
   });
 
   @override
-  List<Object?> get props => [exerciseName, durationSeconds, roundNumber];
+  List<Object?> get props =>
+      [exerciseId, exerciseName, durationSeconds, roundNumber];
 }
 
 class AddRoundEvent extends HomeEvent {

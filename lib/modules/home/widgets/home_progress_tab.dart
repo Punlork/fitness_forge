@@ -41,6 +41,9 @@ class _HomeProgressTabState extends State<HomeProgressTab> {
     final windowPoints = points
         .where((point) => !point.date.isBefore(cutoffDate))
         .toList(growable: false);
+    final windowRecentStrengthSets = widget.state.recentStrengthSets
+        .where((set) => !set.createdAt.isBefore(cutoffDate))
+        .toList(growable: false);
     final uniqueSessionDays = history
         .where((entry) => !entry.sessionDate.isBefore(cutoffDate))
         .map((entry) => DateTime(
@@ -84,7 +87,9 @@ class _HomeProgressTabState extends State<HomeProgressTab> {
                     title: '$_selectedWindowDays day volume',
                     value: windowPoints
                         .fold<double>(
-                            0, (sum, point) => sum + point.strengthVolume)
+                          0,
+                          (sum, point) => sum + point.strengthVolume,
+                        )
                         .toStringAsFixed(0),
                     icon: Icons.fitness_center,
                   ),
@@ -98,13 +103,15 @@ class _HomeProgressTabState extends State<HomeProgressTab> {
                     icon: Icons.timer_outlined,
                   ),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _SummaryTile(
+                    title: 'Active days ($_selectedWindowDays d)',
+                    value: '$uniqueSessionDays',
+                    icon: Icons.calendar_month_outlined,
+                  ),
+                ),
               ],
-            ),
-            const SizedBox(height: 16),
-            _SummaryTile(
-              title: 'Active days ($_selectedWindowDays d)',
-              value: '$uniqueSessionDays',
-              icon: Icons.calendar_month_outlined,
             ),
             const SizedBox(height: 16),
             _InsightCard(message: widget.state.primaryInsight),
@@ -145,6 +152,11 @@ class _HomeProgressTabState extends State<HomeProgressTab> {
                   .toList(),
               lineColor: Colors.pinkAccent,
               emptyText: 'Save body metrics to unlock this chart.',
+            ),
+            const SizedBox(height: 16),
+            _ExerciseTrackingCard(
+              sets: windowRecentStrengthSets,
+              windowDays: _selectedWindowDays,
             ),
             const SizedBox(height: 16),
             _WorkoutHistoryCard(
@@ -529,5 +541,99 @@ class _LatestSetsCard extends StatelessWidget {
       return '${set.reps} reps • ${set.weight.toStringAsFixed(1)} kg assistance';
     }
     return '${set.reps} reps • ${set.weight.toStringAsFixed(1)} kg • volume ${set.volume.toStringAsFixed(1)}';
+  }
+}
+
+class _ExerciseTrackingCard extends StatelessWidget {
+  final List<StrengthSetModel> sets;
+  final int windowDays;
+
+  const _ExerciseTrackingCard({
+    required this.sets,
+    required this.windowDays,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final grouped = <String, List<StrengthSetModel>>{};
+    final labels = <String, String>{};
+    for (final set in sets) {
+      final key = set.exerciseId.isNotEmpty ? set.exerciseId : set.exerciseName;
+      grouped.putIfAbsent(key, () => <StrengthSetModel>[]).add(set);
+      labels[key] = set.exerciseName;
+    }
+
+    final ranking = grouped.entries.toList()
+      ..sort((a, b) => b.value.length.compareTo(a.value.length));
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Exercise tracking ($windowDays d)',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'How often each exercise appears in your logged sets.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 14),
+            if (ranking.isEmpty)
+              const Text('No strength sets in this period yet.')
+            else
+              ...ranking.take(6).map((entry) {
+                final key = entry.key;
+                final exerciseSets = entry.value;
+                final totalReps = exerciseSets.fold<int>(
+                  0,
+                  (sum, set) => sum + set.reps,
+                );
+                final lastLogged = exerciseSets
+                    .map((set) => set.createdAt)
+                    .reduce((a, b) => a.isAfter(b) ? a : b);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          labels[key] ?? key,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${exerciseSets.length} sets • $totalReps total reps • last ${_formatMonthDay(lastLogged)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatMonthDay(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$month/$day';
   }
 }

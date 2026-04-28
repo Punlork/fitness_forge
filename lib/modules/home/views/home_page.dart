@@ -395,6 +395,8 @@ class _HomePageState extends State<HomePage>
                         onToggleStartPause: timerCubit.toggleStartPause,
                         onReset: timerCubit.resetTimer,
                         onSkipPhase: timerCubit.skipPhase,
+                        onRequestNotificationPermissions:
+                            timerCubit.requestNotificationPermissions,
                       );
                     },
                   ),

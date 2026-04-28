@@ -79,6 +79,9 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
   }
 
   void onWorkSecondsChanged(int value) {
+    if (state.isRunning) {
+      return;
+    }
     final current = state;
     emit(
       current.copyWith(
@@ -91,6 +94,9 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
   }
 
   void onRestSecondsChanged(int value) {
+    if (state.isRunning) {
+      return;
+    }
     final current = state;
     emit(
       current.copyWith(
@@ -103,6 +109,9 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
   }
 
   void onTargetRoundsChanged(int value) {
+    if (state.isRunning) {
+      return;
+    }
     emit(state.copyWith(targetRounds: value));
   }
 
@@ -116,6 +125,7 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
 
   void startTimer() {
     if (state.isRunning) return;
+    unawaited(WorkoutTimerNotificationService.instance.requestPermissions());
 
     _phaseEndsAt = DateTime.now().add(
       Duration(seconds: state.remainingSeconds),
@@ -134,6 +144,10 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
       },
     );
     _scheduleBackgroundCompletionAlert();
+  }
+
+  void requestNotificationPermissions() {
+    unawaited(WorkoutTimerNotificationService.instance.requestPermissions());
   }
 
   void pauseTimer() {

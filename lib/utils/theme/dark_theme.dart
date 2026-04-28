@@ -59,7 +59,7 @@ ThemeData darkTheme(BaseColorStyles color) {
       fontWeight: FontWeight.bold,
     ), // Medium titles.
     titleSmall: TextStyle(
-      fontSize: 14.0,
+      fontSize: 16.0,
       fontFamily: 'Gilroy',
     ), // Small titles.
     bodyLarge: TextStyle(

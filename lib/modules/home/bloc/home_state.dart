@@ -25,6 +25,7 @@ class HomeReady extends HomeState {
   final WorkoutDayPlanModel todayPlan;
   final List<JumpRopeIntervalModel> intervals;
   final List<StrengthSetModel> strengthSets;
+  final List<StrengthSetModel> recentStrengthSets;
   final List<ProgressPointModel> progressPoints;
   final BodyMetricModel? latestBodyMetrics;
   final List<BodyMetricModel> bodyMetricsHistory;
@@ -37,6 +38,7 @@ class HomeReady extends HomeState {
     required this.todayPlan,
     required this.intervals,
     required this.strengthSets,
+    required this.recentStrengthSets,
     required this.progressPoints,
     required this.latestBodyMetrics,
     required this.bodyMetricsHistory,
@@ -117,6 +119,7 @@ class HomeReady extends HomeState {
         todayPlan,
         intervals,
         strengthSets,
+        recentStrengthSets,
         progressPoints,
         latestBodyMetrics,
         bodyMetricsHistory,
@@ -130,6 +133,7 @@ class HomeReady extends HomeState {
     WorkoutDayPlanModel? todayPlan,
     List<JumpRopeIntervalModel>? intervals,
     List<StrengthSetModel>? strengthSets,
+    List<StrengthSetModel>? recentStrengthSets,
     List<ProgressPointModel>? progressPoints,
     BodyMetricModel? latestBodyMetrics,
     List<BodyMetricModel>? bodyMetricsHistory,
@@ -143,6 +147,7 @@ class HomeReady extends HomeState {
       todayPlan: todayPlan ?? this.todayPlan,
       intervals: intervals ?? this.intervals,
       strengthSets: strengthSets ?? this.strengthSets,
+      recentStrengthSets: recentStrengthSets ?? this.recentStrengthSets,
       progressPoints: progressPoints ?? this.progressPoints,
       latestBodyMetrics: latestBodyMetrics ?? this.latestBodyMetrics,
       bodyMetricsHistory: bodyMetricsHistory ?? this.bodyMetricsHistory,

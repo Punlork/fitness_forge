@@ -456,6 +456,7 @@ class _LogButton extends StatelessWidget {
                   onLog: (duration) {
                     context.read<HomeBloc>().add(
                           LogTimedWorkEvent(
+                            exerciseId: exercise.id,
                             exerciseName: exercise.name,
                             durationSeconds: duration,
                             roundNumber: roundNumber,
@@ -470,6 +471,7 @@ class _LogButton extends StatelessWidget {
                   onLog: (reps) {
                     context.read<HomeBloc>().add(
                           LogWorkSetEvent(
+                            exerciseId: exercise.id,
                             exerciseName: exercise.name,
                             reps: reps,
                             roundNumber: roundNumber,

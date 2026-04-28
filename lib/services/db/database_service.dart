@@ -11,7 +11,7 @@ class DatabaseService {
 
   // Database version and name
   static const _databaseName = "app_database.db";
-  static const _databaseVersion = 5;
+  static const _databaseVersion = 6;
 
   // Private constructor
   DatabaseService._();
@@ -97,6 +97,9 @@ class DatabaseService {
         if (oldVersion < 5) {
           await _upgradeToV5(txn);
         }
+        if (oldVersion < 6) {
+          await _upgradeToV6(txn);
+        }
       });
       _logger.i('Database upgraded from $oldVersion to $newVersion');
     } catch (e, stackTrace) {
@@ -138,6 +141,7 @@ class DatabaseService {
       CREATE TABLE IF NOT EXISTS strength_sets(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id INTEGER NOT NULL,
+        exercise_id TEXT NOT NULL DEFAULT '',
         exercise_name TEXT NOT NULL,
         weight REAL NOT NULL DEFAULT 0,
         load_type TEXT NOT NULL DEFAULT 'bodyweight',
@@ -221,6 +225,15 @@ class DatabaseService {
     if (!intervalColumns.any((c) => c['name'] == 'round_number')) {
       await txn.execute(
         'ALTER TABLE jump_rope_intervals ADD COLUMN round_number INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+  }
+
+  Future<void> _upgradeToV6(Transaction txn) async {
+    final setColumns = await txn.rawQuery('PRAGMA table_info(strength_sets)');
+    if (!setColumns.any((c) => c['name'] == 'exercise_id')) {
+      await txn.execute(
+        "ALTER TABLE strength_sets ADD COLUMN exercise_id TEXT NOT NULL DEFAULT ''",
       );
     }
   }

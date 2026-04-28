@@ -8,8 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 class WorkoutTimerNotificationService {
   WorkoutTimerNotificationService._();
 
-  static final WorkoutTimerNotificationService instance =
-      WorkoutTimerNotificationService._();
+  static final instance = WorkoutTimerNotificationService._();
 
   static const timerNotificationId = 8801;
   static const _channelId = 'workout_timer_alarm_v2';
@@ -33,10 +32,16 @@ class WorkoutTimerNotificationService {
     600,
   ]);
 
-  final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
+  final _plugin = FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
+
+  bool get shouldShowRequest {
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+
+    return androidPlugin == null;
+  }
 
   Future<void> _ensureInitialized() async {
     if (_initialized) {
@@ -59,7 +64,7 @@ class WorkoutTimerNotificationService {
 
     await _plugin.initialize(settings);
     await _createAndroidChannel();
-    await _requestPermissions();
+    await requestPermissions();
     _initialized = true;
   }
 
@@ -84,7 +89,17 @@ class WorkoutTimerNotificationService {
     );
   }
 
-  Future<void> _requestPermissions() async {
+  Future<void> requestPermissions() async {
+    if (!_initialized) {
+      tz.initializeTimeZones();
+      const InitializationSettings settings = InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(),
+      );
+      await _plugin.initialize(settings);
+      await _createAndroidChannel();
+      _initialized = true;
+    }
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.requestNotificationsPermission();
@@ -123,10 +138,16 @@ class WorkoutTimerNotificationService {
         rethrow;
       }
 
-      // If exact alarm permission is denied, fall back to a visible alert now.
-      await showCompletionAlert(
-        title: title,
-        body: body,
+      // If exact alarms are denied, fall back to inexact scheduling.
+      await _plugin.zonedSchedule(
+        timerNotificationId,
+        title,
+        body,
+        scheduledAt,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
     }
   }

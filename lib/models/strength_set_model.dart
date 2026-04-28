@@ -7,6 +7,7 @@ enum StrengthLoadType {
 class StrengthSetModel {
   final int id;
   final int sessionId;
+  final String exerciseId;
   final String exerciseName;
   final double weight;
   final StrengthLoadType loadType;
@@ -17,6 +18,7 @@ class StrengthSetModel {
   const StrengthSetModel({
     required this.id,
     required this.sessionId,
+    required this.exerciseId,
     required this.exerciseName,
     required this.weight,
     required this.loadType,
@@ -31,6 +33,7 @@ class StrengthSetModel {
     return StrengthSetModel(
       id: (data['id'] as num?)?.toInt() ?? 0,
       sessionId: (data['session_id'] as num?)?.toInt() ?? 0,
+      exerciseId: data['exercise_id'] as String? ?? '',
       exerciseName: data['exercise_name'] as String? ?? '',
       weight: (data['weight'] as num?)?.toDouble() ?? 0.0,
       loadType: _loadTypeFromValue(data['load_type'] as String?),

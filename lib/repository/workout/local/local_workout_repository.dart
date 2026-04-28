@@ -65,6 +65,7 @@ class LocalWorkoutRepository extends BaseRepository {
 
   Future<void> addStrengthSet({
     required int sessionId,
+    String exerciseId = '',
     required String exerciseName,
     double weight = 0,
     StrengthLoadType loadType = StrengthLoadType.bodyweight,
@@ -75,6 +76,7 @@ class LocalWorkoutRepository extends BaseRepository {
       final db = await databaseService.database;
       await db.insert('strength_sets', {
         'session_id': sessionId,
+        'exercise_id': exerciseId,
         'exercise_name': exerciseName,
         'weight': weight,
         'load_type': loadType.name,
@@ -107,6 +109,23 @@ class LocalWorkoutRepository extends BaseRepository {
         where: 'session_id = ?',
         whereArgs: [sessionId],
         orderBy: 'created_at DESC',
+      );
+      return rows.map(StrengthSetModel.fromDb).toList();
+    });
+  }
+
+  Future<List<StrengthSetModel>> getRecentStrengthSets({int days = 60}) async {
+    return handleDatabaseOperation(() async {
+      final db = await databaseService.database;
+      final rows = await db.rawQuery(
+        '''
+        SELECT ss.*
+        FROM strength_sets ss
+        JOIN session_logs s ON s.id = ss.session_id
+        WHERE s.session_date >= date('now', ?)
+        ORDER BY ss.created_at DESC
+        ''',
+        ['-${days - 1} day'],
       );
       return rows.map(StrengthSetModel.fromDb).toList();
     });

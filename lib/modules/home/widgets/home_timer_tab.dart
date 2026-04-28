@@ -1,6 +1,5 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:forge/services/workout_timer_notification_service.dart';
 
 class HomeTimerTab extends StatelessWidget {
   final int workSeconds;
@@ -17,6 +16,7 @@ class HomeTimerTab extends StatelessWidget {
   final VoidCallback onToggleStartPause;
   final VoidCallback onReset;
   final VoidCallback onSkipPhase;
+  final VoidCallback onRequestNotificationPermissions;
 
   const HomeTimerTab({
     required this.workSeconds,
@@ -33,6 +33,7 @@ class HomeTimerTab extends StatelessWidget {
     required this.onToggleStartPause,
     required this.onReset,
     required this.onSkipPhase,
+    required this.onRequestNotificationPermissions,
     super.key,
   });
 
@@ -53,6 +54,7 @@ class HomeTimerTab extends StatelessWidget {
         ? 1 - (remainingSeconds / workSeconds.clamp(1, 999))
         : 1 - (remainingSeconds / restSeconds.clamp(1, 999));
     final bool isWaitingManualAction = isPhaseCompleteAwaitingNext;
+    final bool canEditSetup = !isRunning;
     final bool isWorkoutComplete = !isRunning &&
         !isWaitingManualAction &&
         isWorkPhase &&
@@ -197,6 +199,19 @@ class HomeTimerTab extends StatelessWidget {
                           label: const Text('Reset timer'),
                         ),
                       ),
+                      if (WorkoutTimerNotificationService
+                          .instance.shouldShowRequest) ...[
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: onRequestNotificationPermissions,
+                            icon:
+                                const Icon(Icons.notifications_active_outlined),
+                            label: const Text('Enable timer alerts'),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -226,6 +241,7 @@ class HomeTimerTab extends StatelessWidget {
                         title: 'Work presets',
                         selectedValue: workSeconds,
                         presetValues: const [30, 45, 60, 90],
+                        enabled: canEditSetup,
                         onSelected: onWorkSecondsChanged,
                       ),
                       const SizedBox(height: 12),
@@ -233,6 +249,7 @@ class HomeTimerTab extends StatelessWidget {
                         title: 'Rest presets',
                         selectedValue: restSeconds,
                         presetValues: const [15, 30, 45, 60],
+                        enabled: canEditSetup,
                         onSelected: onRestSecondsChanged,
                       ),
                       const SizedBox(height: 16),
@@ -243,6 +260,7 @@ class HomeTimerTab extends StatelessWidget {
                               label: 'Work',
                               suffix: 'sec',
                               value: workSeconds,
+                              enabled: canEditSetup,
                               onChanged: onWorkSecondsChanged,
                             ),
                           ),
@@ -252,6 +270,7 @@ class HomeTimerTab extends StatelessWidget {
                               label: 'Rest',
                               suffix: 'sec',
                               value: restSeconds,
+                              enabled: canEditSetup,
                               onChanged: onRestSecondsChanged,
                             ),
                           ),
@@ -263,6 +282,7 @@ class HomeTimerTab extends StatelessWidget {
                               value: targetRounds,
                               min: 1,
                               step: 1,
+                              enabled: canEditSetup,
                               onChanged: onTargetRoundsChanged,
                             ),
                           ),
@@ -287,6 +307,7 @@ class _StepperTile extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final int min;
   final int step;
+  final bool enabled;
 
   const _StepperTile({
     required this.label,
@@ -295,6 +316,7 @@ class _StepperTile extends StatelessWidget {
     required this.onChanged,
     this.min = 10,
     this.step = 5,
+    this.enabled = true,
   });
 
   @override
@@ -332,13 +354,15 @@ class _StepperTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton.filledTonal(
-                onPressed: () => onChanged((value - step).clamp(min, 999)),
+                onPressed: enabled
+                    ? () => onChanged((value - step).clamp(min, 999))
+                    : null,
                 icon: const Icon(
                   Icons.remove,
                 ),
               ),
               IconButton.filledTonal(
-                onPressed: () => onChanged(value + step),
+                onPressed: enabled ? () => onChanged(value + step) : null,
                 icon: const Icon(
                   Icons.add,
                   size: 18,
@@ -357,12 +381,14 @@ class _PresetSecondsSection extends StatelessWidget {
   final int selectedValue;
   final List<int> presetValues;
   final ValueChanged<int> onSelected;
+  final bool enabled;
 
   const _PresetSecondsSection({
     required this.title,
     required this.selectedValue,
     required this.presetValues,
     required this.onSelected,
+    this.enabled = true,
   });
 
   @override
@@ -383,7 +409,7 @@ class _PresetSecondsSection extends StatelessWidget {
               (preset) => ChoiceChip(
                 label: Text('${preset}s'),
                 selected: selectedValue == preset,
-                onSelected: (_) => onSelected(preset),
+                onSelected: enabled ? (_) => onSelected(preset) : null,
               ),
             ),
             ChoiceChip(

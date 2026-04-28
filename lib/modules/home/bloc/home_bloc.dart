@@ -108,6 +108,7 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
 
     await _workoutRepository.addStrengthSet(
       sessionId: currentState.session.id,
+      exerciseId: event.exerciseId,
       exerciseName: event.exerciseName,
       weight: event.weight,
       loadType: event.loadType,
@@ -213,6 +214,7 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
 
     await _workoutRepository.addStrengthSet(
       sessionId: currentState.session.id,
+      exerciseId: event.exerciseId,
       exerciseName: event.exerciseName,
       reps: event.reps,
       roundNumber: event.roundNumber,
@@ -230,6 +232,7 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
 
     await _workoutRepository.addStrengthSet(
       sessionId: currentState.session.id,
+      exerciseId: event.exerciseId,
       exerciseName: event.exerciseName,
       reps: event.durationSeconds,
       roundNumber: event.roundNumber,
@@ -283,6 +286,9 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
     final strengthSets = await _workoutRepository.getStrengthSets(
       session.id,
     );
+    final recentStrengthSets = await _workoutRepository.getRecentStrengthSets(
+      days: 60,
+    );
     final progressPoints = await _workoutRepository.getRecentProgress(
       days: 60,
     );
@@ -300,6 +306,7 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
         todayPlan: todayPlan,
         intervals: intervals,
         strengthSets: strengthSets,
+        recentStrengthSets: recentStrengthSets,
         progressPoints: progressPoints,
         latestBodyMetrics: latestBodyMetrics,
         bodyMetricsHistory: bodyMetricsHistory,
