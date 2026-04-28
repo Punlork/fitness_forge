@@ -150,6 +150,10 @@ class HomeTimerCubit extends Cubit<HomeTimerState> {
     unawaited(WorkoutTimerNotificationService.instance.requestPermissions());
   }
 
+  void triggerDebugNotification() {
+    unawaited(WorkoutTimerNotificationService.instance.showDebugTestAlert());
+  }
+
   void pauseTimer() {
     _intervalTimer?.cancel();
     final endAt = _phaseEndsAt;

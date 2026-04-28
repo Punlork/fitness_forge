@@ -397,6 +397,7 @@ class _HomePageState extends State<HomePage>
                         onSkipPhase: timerCubit.skipPhase,
                         onRequestNotificationPermissions:
                             timerCubit.requestNotificationPermissions,
+                        onDebugTestAlert: timerCubit.triggerDebugNotification,
                       );
                     },
                   ),

@@ -32,11 +32,17 @@ enum WorkoutType {
   rest,
 }
 
+enum ExerciseLogUnit {
+  reps,
+  seconds,
+}
+
 class ExercisePlan {
   final String id;
   final String name;
   final String? repsTarget;
   final String? durationTarget;
+  final ExerciseLogUnit logUnit;
   final String howTo;
   final String mistake;
 
@@ -45,16 +51,24 @@ class ExercisePlan {
     required this.name,
     this.repsTarget,
     this.durationTarget,
+    required this.logUnit,
     required this.howTo,
     required this.mistake,
   });
 
   factory ExercisePlan.fromJson(Map<String, dynamic> json) {
+    final String? unitRaw = json['logUnit'] as String?;
+    final ExerciseLogUnit logUnit = unitRaw != null
+        ? ExerciseLogUnit.values.byName(unitRaw)
+        : ((json['durationTarget'] as String?) != null
+            ? ExerciseLogUnit.seconds
+            : ExerciseLogUnit.reps);
     return ExercisePlan(
       id: (json['id'] as String?) ?? (json['name'] as String),
       name: json['name'] as String,
       repsTarget: json['repsTarget'] as String?,
       durationTarget: json['durationTarget'] as String?,
+      logUnit: logUnit,
       howTo: json['howTo'] as String,
       mistake:
           (json['mistake'] as String?) ?? (json['commonMistake'] as String),

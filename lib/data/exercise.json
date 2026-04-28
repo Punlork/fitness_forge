@@ -4,6 +4,7 @@
       "id": "push_incline_desk",
       "name": "Incline Push-ups (Desk)",
       "type": "push",
+      "logUnit": "reps",
       "tags": ["strength", "chest", "triceps", "beginner"],
       "howTo": "Hands on desk. Elbows at 45° (A-shape). Core tight.",
       "mistake": "Flaring elbows (T-shape) - causes tricep pain."
@@ -12,6 +13,7 @@
       "id": "push_negatives",
       "name": "Push-up Negatives",
       "type": "push",
+      "logUnit": "reps",
       "tags": ["strength", "advanced_beginner"],
       "howTo": "5s lowering phase. Use a chair to get back up.",
       "mistake": "Dropping too fast; loss of core tension."
@@ -20,6 +22,7 @@
       "id": "push_diamonds_incline",
       "name": "Incline Diamonds",
       "type": "push",
+      "logUnit": "reps",
       "tags": ["strength", "triceps", "narrow_grip"],
       "howTo": "Hands touch (diamond shape) on table. Slow eccentric.",
       "mistake": "Pushing through sharp elbow pain. Stop if sharp!"
@@ -28,6 +31,7 @@
       "id": "pull_active_hang",
       "name": "Active Dead Hangs",
       "type": "pull",
+      "logUnit": "seconds",
       "tags": ["mobility", "back_fix", "spine_decompression"],
       "howTo": "Grip bar. Pull shoulder blades down away from ears.",
       "mistake": "Passive hanging; feet touching floor (bend knees)."
@@ -36,6 +40,7 @@
       "id": "pull_scapular_pulls",
       "name": "Scapular Pulls",
       "type": "pull",
+      "logUnit": "reps",
       "tags": ["strength", "upper_back", "pull_up_prep"],
       "howTo": "Hang straight. Lift body 2 inches using back only. Arms straight.",
       "mistake": "Bending elbows to cheat the movement."
@@ -44,6 +49,7 @@
       "id": "pull_top_holds",
       "name": "Top-of-Bar Holds",
       "type": "pull",
+      "logUnit": "seconds",
       "tags": ["isometric", "strength", "biceps"],
       "howTo": "Chin over bar. Squeeze every muscle. Keep breathing.",
       "mistake": "Holding breath (increases internal pressure)."
@@ -52,6 +58,7 @@
       "id": "core_bird_dog",
       "name": "Bird-Dogs",
       "type": "core",
+      "logUnit": "reps",
       "tags": ["stability", "back_safe", "beginner"],
       "howTo": "On all fours. Extend opposite arm/leg. Flat back.",
       "mistake": "Arching back (causes sharp pain). Keep hips level."
@@ -60,6 +67,7 @@
       "id": "core_knee_tucks",
       "name": "Hanging Knee Tucks",
       "type": "core",
+      "logUnit": "reps",
       "tags": ["abs", "hip_flexors", "grip"],
       "howTo": "Hang from bar. Slowly lift knees to chest. No swing.",
       "mistake": "Using momentum; swinging like a pendulum."
@@ -68,6 +76,7 @@
       "id": "core_plank",
       "name": "Plank",
       "type": "core",
+      "logUnit": "seconds",
       "tags": ["isometric", "stability", "total_body"],
       "howTo": "Straight line head-to-heels. Squeeze glutes hard.",
       "mistake": "Sagging hips (hurts lower back). Looking up."
@@ -76,6 +85,7 @@
       "id": "leg_slow_squat",
       "name": "Slow Squats",
       "type": "legs",
+      "logUnit": "reps",
       "tags": ["strength", "lower_body", "beginner"],
       "howTo": "3s down, 1s up. Weight on heels. Chest up.",
       "mistake": "Rounding back; weight on toes."
@@ -84,6 +94,7 @@
       "id": "leg_walking_lunges",
       "name": "Walking Lunges",
       "type": "legs",
+      "logUnit": "reps",
       "tags": ["strength", "stability", "balance"],
       "howTo": "Large steps. Front knee stays behind toes.",
       "mistake": "Banging back knee on floor."
@@ -92,6 +103,7 @@
       "id": "leg_wall_sit",
       "name": "Wall Sit",
       "type": "legs",
+      "logUnit": "seconds",
       "tags": ["isometric", "lower_body", "quads"],
       "howTo": "Back flat against wall. Legs at 90°.",
       "mistake": "Resting hands on knees."
@@ -100,6 +112,7 @@
       "id": "mobility_chest_open",
       "name": "Doorway Chest Stretch",
       "type": "mobility",
+      "logUnit": "seconds",
       "tags": ["recovery", "posture", "back_fix"],
       "howTo": "Forearm on door frame. Lean forward gently. Feel chest open.",
       "mistake": "Aggressive pulling; holding breath."
@@ -108,6 +121,7 @@
       "id": "mobility_calf_stretch",
       "name": "Wall Calf Stretch",
       "type": "mobility",
+      "logUnit": "seconds",
       "tags": ["recovery", "legs", "jump_rope_prep"],
       "howTo": "Hands on wall. One foot back, heel down. Lean in.",
       "mistake": "Bouncing; lifting the back heel."
@@ -116,6 +130,7 @@
       "id": "mobility_foot_roll",
       "name": "Tennis Ball Foot Roll",
       "type": "mobility",
+      "logUnit": "seconds",
       "tags": ["recovery", "feet", "pain_relief"],
       "howTo": "Tennis ball under foot arch. Roll with light pressure.",
       "mistake": "Pressing too hard; causing sharp pain."
@@ -124,6 +139,7 @@
       "id": "hiit_high_knees",
       "name": "High Knees",
       "type": "cardio",
+      "logUnit": "seconds",
       "tags": ["hiit", "conditioning", "warmup"],
       "durationTarget": "60s",
       "howTo": "Drive knees up fast with light, quick steps.",
@@ -133,6 +149,7 @@
       "id": "recovery_shadow_box",
       "name": "Shadow Boxing (Easy Pace)",
       "type": "recovery",
+      "logUnit": "seconds",
       "tags": ["cardio", "recovery", "coordination"],
       "durationTarget": "60s",
       "howTo": "Keep guard up and throw relaxed combos at easy pace.",
@@ -142,6 +159,7 @@
       "id": "cardio_jacks",
       "name": "Jumping Jacks",
       "type": "cardio",
+      "logUnit": "seconds",
       "tags": ["metabolic", "full_body", "cardio"],
       "durationTarget": "45s",
       "howTo": "Touch hands overhead and land softly.",
@@ -151,6 +169,7 @@
       "id": "cardio_climbers",
       "name": "Mountain Climbers",
       "type": "cardio",
+      "logUnit": "seconds",
       "tags": ["core", "conditioning", "cardio"],
       "durationTarget": "45s",
       "howTo": "Keep shoulders over wrists and drive knees in rhythm.",
@@ -160,6 +179,7 @@
       "id": "cardio_burpees_no_pushup",
       "name": "Burpees (No Push-up)",
       "type": "cardio",
+      "logUnit": "seconds",
       "tags": ["metabolic", "full_body", "advanced_beginner"],
       "durationTarget": "40s",
       "howTo": "Hands down, step or hop back, stand tall, then jump lightly.",

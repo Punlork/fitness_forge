@@ -11,6 +11,7 @@ class StrengthSetModel {
   final String exerciseName;
   final double weight;
   final StrengthLoadType loadType;
+  final bool isTimedWork;
   final int reps;
   final int roundNumber;
   final DateTime createdAt;
@@ -22,6 +23,7 @@ class StrengthSetModel {
     required this.exerciseName,
     required this.weight,
     required this.loadType,
+    this.isTimedWork = false,
     required this.reps,
     this.roundNumber = 0,
     required this.createdAt,
@@ -37,6 +39,7 @@ class StrengthSetModel {
       exerciseName: data['exercise_name'] as String? ?? '',
       weight: (data['weight'] as num?)?.toDouble() ?? 0.0,
       loadType: _loadTypeFromValue(data['load_type'] as String?),
+      isTimedWork: ((data['is_timed_work'] as num?)?.toInt() ?? 0) == 1,
       reps: (data['reps'] as num?)?.toInt() ?? 0,
       roundNumber: (data['round_number'] as num?)?.toInt() ?? 0,
       createdAt: DateTime.tryParse(data['created_at'] as String? ?? '') ??

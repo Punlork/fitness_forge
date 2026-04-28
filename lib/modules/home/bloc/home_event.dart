@@ -36,6 +36,7 @@ class AddStrengthSetEvent extends HomeEvent {
   final String exerciseName;
   final double weight;
   final StrengthLoadType loadType;
+  final bool isTimedWork;
   final int reps;
 
   const AddStrengthSetEvent({
@@ -43,11 +44,13 @@ class AddStrengthSetEvent extends HomeEvent {
     required this.exerciseName,
     required this.weight,
     required this.loadType,
+    this.isTimedWork = false,
     required this.reps,
   });
 
   @override
-  List<Object?> get props => [exerciseId, exerciseName, weight, loadType, reps];
+  List<Object?> get props =>
+      [exerciseId, exerciseName, weight, loadType, isTimedWork, reps];
 }
 
 class CompleteSessionEvent extends HomeEvent {

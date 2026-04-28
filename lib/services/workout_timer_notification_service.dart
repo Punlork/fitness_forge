@@ -11,7 +11,7 @@ class WorkoutTimerNotificationService {
   static final instance = WorkoutTimerNotificationService._();
 
   static const timerNotificationId = 8801;
-  static const _channelId = 'workout_timer_alarm_v2';
+  static const _channelId = 'workout_timer_alarm_v3';
   static const _channelName = 'Workout Timer';
   static const _channelDescription =
       'Timer completion alerts with sound and vibration';
@@ -40,7 +40,7 @@ class WorkoutTimerNotificationService {
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
 
-    return androidPlugin == null;
+    return androidPlugin != null;
   }
 
   Future<void> _ensureInitialized() async {
@@ -168,6 +168,13 @@ class WorkoutTimerNotificationService {
   Future<void> cancelTimerAlert() async {
     await _ensureInitialized();
     await _plugin.cancel(timerNotificationId);
+  }
+
+  Future<void> showDebugTestAlert() async {
+    await showCompletionAlert(
+      title: 'Timer Alert Test',
+      body: 'If you can see/hear/vibrate this, local timer alerts work.',
+    );
   }
 
   NotificationDetails _alarmNotificationDetails() {

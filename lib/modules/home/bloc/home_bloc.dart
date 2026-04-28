@@ -112,6 +112,7 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
       exerciseName: event.exerciseName,
       weight: event.weight,
       loadType: event.loadType,
+      isTimedWork: event.isTimedWork,
       reps: event.reps,
     );
 
@@ -216,6 +217,7 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
       sessionId: currentState.session.id,
       exerciseId: event.exerciseId,
       exerciseName: event.exerciseName,
+      isTimedWork: false,
       reps: event.reps,
       roundNumber: event.roundNumber,
     );
@@ -234,6 +236,7 @@ class HomeBloc extends BaseBloc<HomeEvent, HomeState> {
       sessionId: currentState.session.id,
       exerciseId: event.exerciseId,
       exerciseName: event.exerciseName,
+      isTimedWork: true,
       reps: event.durationSeconds,
       roundNumber: event.roundNumber,
     );

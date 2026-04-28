@@ -534,6 +534,9 @@ class _LatestSetsCard extends StatelessWidget {
   }
 
   String _formatStrengthSet(StrengthSetModel set) {
+    if (set.isTimedWork) {
+      return '${set.reps}s • timed';
+    }
     if (set.loadType == StrengthLoadType.bodyweight || set.weight <= 0) {
       return '${set.reps} reps • bodyweight';
     }
@@ -564,7 +567,9 @@ class _ExerciseTrackingCard extends StatelessWidget {
     }
 
     final ranking = grouped.entries.toList()
-      ..sort((a, b) => b.value.length.compareTo(a.value.length));
+      ..sort(
+        (a, b) => b.value.length.compareTo(a.value.length),
+      );
 
     return Card(
       elevation: 0,
@@ -590,13 +595,20 @@ class _ExerciseTrackingCard extends StatelessWidget {
               ...ranking.take(6).map((entry) {
                 final key = entry.key;
                 final exerciseSets = entry.value;
+
+                final showAsTimed = exerciseSets.any((set) => set.isTimedWork);
+
                 final totalReps = exerciseSets.fold<int>(
                   0,
                   (sum, set) => sum + set.reps,
                 );
+
                 final lastLogged = exerciseSets
                     .map((set) => set.createdAt)
                     .reduce((a, b) => a.isAfter(b) ? a : b);
+
+                final displayTotals =
+                    showAsTimed ? '${totalReps}s' : '$totalReps reps';
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Container(
@@ -617,7 +629,7 @@ class _ExerciseTrackingCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${exerciseSets.length} sets • $totalReps total reps • last ${_formatMonthDay(lastLogged)}',
+                          '${exerciseSets.length} sets • $displayTotals • last ${_formatMonthDay(lastLogged)}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],

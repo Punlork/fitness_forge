@@ -17,6 +17,7 @@ class HomeTimerTab extends StatelessWidget {
   final VoidCallback onReset;
   final VoidCallback onSkipPhase;
   final VoidCallback onRequestNotificationPermissions;
+  final VoidCallback onDebugTestAlert;
 
   const HomeTimerTab({
     required this.workSeconds,
@@ -34,6 +35,7 @@ class HomeTimerTab extends StatelessWidget {
     required this.onReset,
     required this.onSkipPhase,
     required this.onRequestNotificationPermissions,
+    required this.onDebugTestAlert,
     super.key,
   });
 
@@ -209,6 +211,15 @@ class HomeTimerTab extends StatelessWidget {
                             icon:
                                 const Icon(Icons.notifications_active_outlined),
                             label: const Text('Enable timer alerts'),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: onDebugTestAlert,
+                            icon: const Icon(Icons.bug_report_outlined),
+                            label: const Text('Test alert now'),
                           ),
                         ),
                       ],

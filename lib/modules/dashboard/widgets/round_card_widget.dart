@@ -309,7 +309,8 @@ class _ExerciseLogTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final isTimed = exercise.durationTarget != null;
+    final isTimed = exercise.logUnit == ExerciseLogUnit.seconds ||
+        logs.any((log) => log.isTimedWork);
 
     String logValues;
     if (isTimed) {
@@ -408,7 +409,7 @@ class _LogButton extends StatelessWidget {
   }
 
   void _showLogSheet(BuildContext context) {
-    final isTimed = exercise.durationTarget != null;
+    final isTimed = exercise.logUnit == ExerciseLogUnit.seconds;
     final targetReps = int.tryParse(
       exercise.repsTarget?.split('-').first ?? '',
     );

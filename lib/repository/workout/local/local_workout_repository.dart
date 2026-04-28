@@ -69,6 +69,7 @@ class LocalWorkoutRepository extends BaseRepository {
     required String exerciseName,
     double weight = 0,
     StrengthLoadType loadType = StrengthLoadType.bodyweight,
+    bool isTimedWork = false,
     required int reps,
     int roundNumber = 0,
   }) async {
@@ -80,6 +81,7 @@ class LocalWorkoutRepository extends BaseRepository {
         'exercise_name': exerciseName,
         'weight': weight,
         'load_type': loadType.name,
+        'is_timed_work': isTimedWork ? 1 : 0,
         'reps': reps,
         'round_number': roundNumber,
         'created_at': DateTime.now().toIso8601String(),

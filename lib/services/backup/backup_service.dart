@@ -99,7 +99,7 @@ class BackupService {
     return {
       'backupVersion': _backupVersion,
       'createdAt': DateTime.now().toIso8601String(),
-      'appDbVersion': 6,
+      'appDbVersion': 7,
       'tables': tables,
     };
   }
