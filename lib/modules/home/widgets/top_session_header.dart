@@ -35,15 +35,21 @@ class TopSessionHeader extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             AppHeaderText(
               '${state.todayPlan.dayLabel} • ${state.todayPlan.focus}',
               level: AppHeaderLevel.page,
               color: colorScheme.primary,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              height: 1.2,
             ),
             const SizedBox(height: 8),
             Text(
               '${state.todayPlan.cardioSeconds}s ${state.todayPlan.cardioMode.name} \u2192 ${state.todayPlan.workSeconds}s ${state.todayPlan.workDescription}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.15,
@@ -51,27 +57,29 @@ class TopSessionHeader extends StatelessWidget {
                 color: colorScheme.onSurface.withValues(alpha: 0.72),
               ),
             ),
-            const Spacer(),
-            Row(
-              spacing: 8,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                HeaderStatChip(
-                  iconAssetName: AppAssets.roundsIcon,
-                  label: 'Rounds',
-                  value: '${state.computedRound}',
-                ),
-                HeaderStatChip(
-                  iconAssetName: AppAssets.cardioIcon,
-                  label: 'Cardio',
-                  value: _formatDuration(state.cardioSeconds),
-                ),
-                HeaderStatChip(
-                  iconAssetName: AppAssets.volumeIcon,
-                  label: 'Volume',
-                  value: state.totalStrengthVolume.toStringAsFixed(0),
-                ),
-              ],
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                spacing: 8,
+                children: [
+                  HeaderStatChip(
+                    iconAssetName: AppAssets.roundsIcon,
+                    label: 'Rounds',
+                    value: '${state.computedRound}',
+                  ),
+                  HeaderStatChip(
+                    iconAssetName: AppAssets.cardioIcon,
+                    label: 'Cardio',
+                    value: _formatDuration(state.cardioSeconds),
+                  ),
+                  HeaderStatChip(
+                    iconAssetName: AppAssets.volumeIcon,
+                    label: 'Volume',
+                    value: state.totalStrengthVolume.toStringAsFixed(0),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

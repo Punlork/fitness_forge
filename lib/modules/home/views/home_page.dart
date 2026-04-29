@@ -166,7 +166,7 @@ class _HomePageState extends State<HomePage>
       pinnedHeaderSliverHeightBuilder: () => pinnedHeaderHeight,
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverAppBar(
-          expandedHeight: 230,
+          expandedHeight: 240,
           elevation: 0,
           scrolledUnderElevation: 0,
           backgroundColor: colorScheme.surface,
@@ -174,18 +174,20 @@ class _HomePageState extends State<HomePage>
             builder: (context, constraints) {
               _top = constraints.biggest.height;
 
+              final isPinned = (_top - pinnedHeaderHeight).abs() < 0.5;
+
               return FlexibleSpaceBar(
                 titlePadding: const EdgeInsetsDirectional.only(
                   start: 20,
                   bottom: 18,
                 ),
-                title: _top == pinnedHeaderHeight
+                title: isPinned
                     ? AppHeaderText(
                         '${state.todayPlan.dayLabel} \u2022 ${state.todayPlan.focus}',
                         level: AppHeaderLevel.subsection,
                         color: Theme.of(context).colorScheme.primary,
                       )
-                    : SizedBox(),
+                    : const SizedBox.shrink(),
                 background: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
